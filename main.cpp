@@ -2,10 +2,24 @@
 #include <stdlib.h>
 #include <math.h>
 
-/** Tipo Abstrato de Dados que representa um número complexo */
+/** Tipo Abstrato de Dados que representa um valor numerico componente da amplitude */
+class Value{
+public:
+    int num;
+    int rootIndex;
+};
+
+/** Tipo Abstrato de Dados que representa a fracao de cada um dos termos da amplitude*/
 typedef struct{
-    float real, imag;
-}Complex;
+    Value num;
+    Value den;
+} Fraction;
+
+/** Tipo Abstrato de Dados que representa a amplitude de probabilidade */
+typedef struct {
+    Fraction real;
+    Fraction imag;
+} Amplitude;
 
 /** Aloca e retorna um complexo */
 Complex* makeComplex() {
