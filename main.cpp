@@ -10,16 +10,26 @@ public:
 };
 
 /** Tipo Abstrato de Dados que representa a fracao de cada um dos termos da amplitude*/
-typedef struct{
+class Fraction{
+public:
     Value num;
     Value den;
-} Fraction;
+};
 
 /** Tipo Abstrato de Dados que representa a amplitude de probabilidade */
-typedef struct {
+class Amplitude{
+public:
     Fraction real;
     Fraction imag;
-} Amplitude;
+};
+
+class UniqueQubitState{
+public:
+    Amplitude alpha;
+    Amplitude beta;
+    float* measureQuantumState(...){...}
+    ...
+};
 
 /** Aloca e retorna um complexo */
 Complex* makeComplex() {
