@@ -9,6 +9,7 @@ using namespace std;
 // ****************************************************************************************
 // UTILS FUNCTIONS
 // ****************************************************************************************
+
 // Função para calcular o MDC usando o Algoritmo de Euclides
 int MDC(int a, int b) {
     while (b != 0) {
@@ -18,18 +19,101 @@ int MDC(int a, int b) {
     }
     return a;
 }
-// Função para calcular o MMC usando a relação MMC(a, b) = (a * b) / MDC(a, b)
+/** Função para calcular o MMC usando a relação MMC(a, b) = (a * b) / MDC(a, b) */
 int MMC(int a, int b) {
     return (a / MDC(a, b)) * b; // Evita overflow ao dividir antes de multiplicar
 }
 // ****************************************************************************************
 
-/** verifica se duas frações são iguais */
-bool equals(short A[3], short B[3]){
+/** Tipo Abstrato de Dados que representa a matriz simples de qutib único */
+class SimpleQubitState{
+public:
+    int **data = new int*[4]; // data matrix, 4 lines
+    int *alphaReal = data[0]; // points to real part of |0⟩ amplitude
+    int *alphaImag = data[1]; // points to imaginary part of |0⟩ amplitude
+    int *betaReal = data[2]; // points to real part of |1⟩ amplitude
+    int *betaImag = data[3]; // points to imaginary part of |1⟩ amplitude
+
+    SimpleQubitState(){
+        for(int i=0;i<4;i++){ // percorre as linhas
+            data[i] = new int[6]; // 6 columns
+            for(int j=0;j<6;j++){ // percorre as colunas
+                data[i][j]=0; // fill zeros
+            }
+        }
+    }
+    SimpleQubitState(int data[4][6]){
+        // transfer received data
+        for(int i=0;i<4;i++){ // percorre as linhas
+            this->data[i] = new int[6]; // 6 columns
+            for(int j=0;j<6;j++){ // percorre as colunas
+                this->data[i][j]=data[i][j]; // transfer data
+            }
+        }
+    }
+    
+    // member functions
+    int** getMatrix(){return this->data;} // get raw matrix data
+    int* getAlphaReal(){return this->alphaReal;} // gets real part of |0⟩ amplitude
+    int* getAlphaImag(){return this->alphaImag;} // gets imaginary part of |0⟩ amplitude
+    int* getBetaReal(){return this->betaReal;} // gets real part of |1⟩ amplitude
+    int* getBetaImag(){return this->betaImag;} // gets imaginary part of |1⟩ amplitude
+    int** getAlphaCopy(){
+        int **data = new int*[2]; // alpha data, 2 lines
+        for(int i=0;i<2;i++){ // percorre as linhas
+            data[i] = new int[6]; // 6 columns
+            for(int j=0;j<6;j++){ // percorre as colunas
+                data[i][j]=this->data[i][j]; // transfer data
+            }
+        }
+        return data;
+    }
+    int** getBetaCopy(){
+        int **data = new int*[2]; // alpha data, 2 lines
+        for(int i=0;i<2;i++){ // percorre as linhas
+            data[i] = new int[6]; // 6 columns
+            for(int j=0;j<6;j++){ // percorre as colunas
+                data[i][j]=this->data[i+2][j]; // transfer data
+            }
+        }
+        return data;
+    }
+    
+    /** Obtem 1 das 4 frações existentes
+     * @param 0 alpha real
+     * @param 1 alpha imaginary
+     * @param 2 beta real
+     * @param 3 beta imaginary
+    */
+    string getFractionAsString(int line){
+        if(line<0||line>3) return "(invalid line)";
+        string num = to_string(data[line][0]); if(data[line][1]==2) num="√"+num;
+        string den = to_string(data[line][3]); if(data[line][4]==2) den="√"+den;
+        return "("+num+"/"+den+")";
+    }
+
+    string getAlphaRealAsString(){return getFractionAsString(0);}
+    string getAlphaImagAsString(){return getFractionAsString(1);}
+    string getBetaRealAsString(){return getFractionAsString(2);}
+    string getBetaImagAsString(){return getFractionAsString(3);}
+    
+    string getAlphaAsString(){
+        return "("+getAlphaRealAsString()+"+"+getAlphaImagAsString()+"i)";
+    }
+    string getBetaAsString(){
+        return "("+getBetaRealAsString()+"+"+getBetaImagAsString()+"i)";
+    }
+    string getStateAsString(){
+        return "|ψ⟩ = "+getAlphaAsString()+"|0⟩ + "+getBetaAsString()+"|1⟩";
+    }
+};
+
+/** verifica se dois valores são iguais */
+bool equals(int *A, int *B){
     return A[0]==B[0]&&A[1]==B[1]&&A[2]==B[2];
 }
 
-void simplifyFraction(short *frac){
+void simplifyFraction(int *frac){
     int mdc = MDC(frac[0],frac[3]);
     // simplifica a fração, caso precise
     if(mdc!=1){
@@ -39,55 +123,58 @@ void simplifyFraction(short *frac){
 }
 
 /** Realiza a soma das frações. Pelo fato de que (|α|^2) = (x^2+y^2) a soma de frações nunca terão radicais! */
-short* sum(short frac_A[6],short frac_B[6]){
+int* sum(int *A,int *B){
     // arrays para armazenar os valores de num e den das frações
-    short frac_C_num[3],frac_C_den[3]; // fração resultado
-    short frac_A_num[3],frac_A_den[3]; 
-    short frac_B_num[3],frac_B_den[3];
+    int *A_num = new int[3];
+    int *A_den = new int[3]; 
+    int *B_num = new int[3];
+    int *B_den = new int[3];
+    int *C_num = new int[3];
+    int *C_den = new int[3];
     
-    for(int i=0;i<3;i++){frac_A_num[i]=frac_A[i];frac_B_num[i]=frac_B[i];}// extrai o num das frações
-    for(int i=3;i<6;i++){frac_A_den[i-3]=frac_A[i];frac_B_den[i-3]=frac_B[i];}// extrai o den das frações
+    for(int i=0;i<3;i++){A_num[i]=A[i];B_num[i]=B[i];}// extrai o num das frações
+    for(int i=3;i<6;i++){A_den[i-3]=A[i];B_den[i-3]=B[i];}// extrai o den das frações
 
-    if(equals(frac_A_den,frac_B_den)){ // denominadores iguais (não precisa fazer MDC)
-        // frac_C_den = frac_A_den; // mantém o denominador
-        for(int i=0;i<3;i++){frac_C_den[i]=frac_A_den[i];}
+    if(equals(A_den,B_den)){ // denominadores iguais (não precisa fazer MDC)
+        // C_den = A_den; // mantém o denominador
+        for(int i=0;i<3;i++){C_den[i]=A_den[i];}
 
         // Numerator SUM (they will never have radical)
-        frac_C_num[1]=0; // pois não será raiz quadrada
-        frac_C_num[2]=1; // pois não será raiz quadrada
-        frac_C_num[0]=frac_A_num[0]+frac_B_num[0]; // soma os valores dos numeradores
+        C_num[1]=0; // pois não será raiz quadrada
+        C_num[2]=1; // pois não será raiz quadrada
+        C_num[0]=A_num[0]+B_num[0]; // soma os valores dos numeradores
 
     }else{ // denominadores diferentes (precisa fazer MDC)
-        int mmc = MMC(frac_A_den[0], frac_B_den[0]); // find common denominator
-        frac_A_den[0]=mmc;
-        frac_A_den[1]=0; // pois não será raiz quadrada
-        frac_A_den[2]=1; // pois não será raiz quadrada
+        int mmc = MMC(A_den[0], B_den[0]); // find common denominator
+        A_den[0]=mmc;
+        A_den[1]=0; // pois não será raiz quadrada
+        A_den[2]=1; // pois não será raiz quadrada
             
         // Numerator SUM //
-        frac_C_num[1]=0; // pois não será raiz quadrada
-        frac_C_num[2]=1; // pois não será raiz quadrada
-        frac_C_num[0]=((mmc/frac_A_den[0])*frac_A_num[0])+((mmc/frac_B_den[0])*frac_B_num[0]); // soma os valores dos numeradores (considerando o MMC)
+        C_num[1]=0; // pois não será raiz quadrada
+        C_num[2]=1; // pois não será raiz quadrada
+        C_num[0]=((mmc/A_den[0])*A_num[0])+((mmc/B_den[0])*B_num[0]); // soma os valores dos numeradores (considerando o MMC)
     }
 
     // junta o numerador e denominador em uma única fração resultado
-    short *frac_C = (short*) malloc(sizeof(short)*6); // fração resultado
-    for(int i=0;i<3;i++){frac_C[i]=frac_C_num[i];}
-    for(int i=3;i<6;i++){frac_C[i]=frac_C_den[i-3];}
+    int *C = new int[6]; // fração resultado
+    for(int i=0;i<3;i++){C[i]=C_num[i];}
+    for(int i=3;i<6;i++){C[i]=C_den[i-3];}
 
-    simplifyFraction(frac_C);
-    return frac_C;
+    simplifyFraction(C);
+    return C;
 }
 
-/** Calcula |α|2 do amplitude*/
-short* calcAmpModSquared(short state[2][6]){
+/** Calcula |α|^2 da amplitude*/
+int* calcAmpModSquared(int **amp){
     
-    short real[6]; // array para armazenar a parte real do estado
-    short imag[6]; // array para armazenar a parte imaginária do estado
-    for(int i=0;i<6;i++){real[i]=state[0][i];}// obtém a parte real do estado
-    for(int i=0;i<6;i++){imag[i]=state[1][i];}// obtém a parte imaginária do estado
+    int real[6]; // array para armazenar a parte real da amplitude
+    int imag[6]; // array para armazenar a parte imaginária da amplitude
+    for(int i=0;i<6;i++){real[i]=amp[0][i];}// obtém a parte real da amplitude
+    for(int i=0;i<6;i++){imag[i]=amp[1][i];}// obtém a parte imaginária da amplitude
 
     // processamento da parte real
-    short realSquared[6]; // array para armazenar a parte real do estado ao quadrado (já processada)
+    int realSquared[6]; // array para armazenar a parte real da amplitude ao quadrado (já processada)
     if(real[1]==0){ // o num da parte real não possui raiz
         realSquared[0] = real[0]*real[0];
         realSquared[1]=0;
@@ -108,7 +195,7 @@ short* calcAmpModSquared(short state[2][6]){
     }
 
     // processamento da parte imaginaria
-    short imagSquared[6]; // array para armazenar a parte real do estado ao quadrado (já processada)
+    int imagSquared[6]; // array para armazenar a parte real da amplitude ao quadrado (já processada)
     if(imag[1]==0){ // o num da parte real não possui raiz
         imagSquared[0] = imag[0]*imag[0];
         imagSquared[1]=0;
@@ -128,40 +215,23 @@ short* calcAmpModSquared(short state[2][6]){
         imagSquared[5]=1;
     }
 
+    // TODO só precisa somar se ambas as partes forem diferentes de zero
     return sum(realSquared,imagSquared); // soma as frações e retorna o resultado
 }
 
-void printModSquared(short s[2][6], short r[6]){
-    string rn,rd,in,id;
-    rn = to_string(s[0][0]); //if(s[0][1]==2) rn="√"+rn;
-    rd = to_string(s[0][3]); //if(s[0][4]==2) rd="√"+rd;
-    in = to_string(s[1][0]); //if(s[1][1]==2) in="√"+in;
-    id = to_string(s[1][3]); //if(s[1][4]==2) id="√"+id;
-    cout << "O módulo da amplitude (("<<rn<<"/"<<rd<<")+("<<in<<"/"<<id<<")i) ao quadrado = (("<<rn<<"/"<<rd<<")^2 + ("<<in<<"/"<<id<<")^2) = ("<<r[0]<<"/"<<r[3]<<")"<<endl;
-}
-
-// void printState(short s[4][6]){
-//     string arn,ard,ain,aid,brn,brd,bin,bid;
-//     arn = s[0][0]; if(s[0][1]==2) arn="√"+arn;
-//     ard = s[0][3]; if(s[0][4]==2) ard="√"+ard;
-//     ain = s[1][0]; if(s[1][1]==2) ain="√"+ain;
-//     aid = s[1][3]; if(s[1][4]==2) aid="√"+aid;
-//     brn = s[2][0]; if(s[2][1]==2) brn="√"+brn;
-//     brd = s[2][3]; if(s[2][4]==2) brd="√"+brd;
-//     bin = s[3][0]; if(s[3][1]==2) bin="√"+bin;
-//     bid = s[3][3]; if(s[3][4]==2) bid="√"+bid;
-//     printf("\nO estado |ψ⟩= ((%d/%d)+(%d/%d))|0⟩ + ((%d/%d)+(%d/%d))|1⟩ = (%d/%s)\n",arn,ard,ain,aid,brn,brd,bin,bid);
-// }
-
 int main(){
     
-    short state1[4][6] = {{1,0,1,6,2,1},
+    int data[4][6] = {{1,0,1,6,2,1},
                           {1,0,1,6,2,1},
                           {2,2,1,3,2,1},
                           {0,0,0,0,0,0}};
-    
-    short *result = calcAmpModSquared(state1);
-    printModSquared(state1,result);
+
+    SimpleQubitState *state = new SimpleQubitState(data);
+    cout << state->getStateAsString() << endl;
+    int *alphaResult = calcAmpModSquared(state->getAlphaCopy());
+    int *betaResult = calcAmpModSquared(state->getBetaCopy());
+    cout << "O módulo da amplitude "<<state->getAlphaAsString()<<" ao quadrado = ("<<alphaResult[0]<<"/"<<alphaResult[3]<<")"<<endl;
+    cout << "O módulo da amplitude "<<state->getBetaAsString()<<" ao quadrado = ("<<betaResult[0]<<"/"<<betaResult[3]<<")"<<endl;
 
     return 0;
 }
