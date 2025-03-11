@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <vector>
 
 using namespace std;
@@ -119,9 +120,14 @@ vector<SimpleQubitState>* loadQuantumStates(const string& fileName){
     vector<SimpleQubitState> *states = new vector<SimpleQubitState>();
     for(int i=0;i<textStates.size();i++){ // percorre cada uma dos estados quânticos retornados
         string textState = textStates[i]; // estado quantico em forma textual
+        std::vector<int> numbers; // estado quantico em forma numerica, cada um deles
+        stringstream ss(textState); // 
+        string token; // armazena o valor em caracter, de forma temporária
+        while (getline(ss, token, ',')) numbers.push_back(stoi(token)); // extrai cada um dos valores do estado
+
         int data[4][6]; // matriz para cada um dos estados
-        for(int j=0;j<textState.size();j++){// percorre cada valor da representação matricial do estado
-            data[j/6][j%6]=textState[j]-'0'; // transfere os dados da a matriz
+        for(int j=0;j<numbers.size();j++){// percorre cada valor da representação matricial do estado
+            data[j/6][j%6]=numbers[j]; // transfere os dados da a matriz
         }
         states->push_back(SimpleQubitState(data)); // inicializa cada um dos estados quânticos
     }
@@ -179,7 +185,7 @@ int* sum(int *A,int *B){
     for(int i=3;i<6;i++){A_den[i-3]=A[i];B_den[i-3]=B[i];}// extrai o den das frações
 
     if(equals(A_den,B_den)){ // denominadores iguais (não precisa fazer MDC)
-        // C_den = A_den; // mantém o denominador
+        // mantém o denominador
         for(int i=0;i<3;i++){C_den[i]=A_den[i];}
 
         // Numerator SUM (they will never have radical)
@@ -189,9 +195,9 @@ int* sum(int *A,int *B){
 
     }else{ // denominadores diferentes (precisa fazer MDC)
         int mmc = MMC(A_den[0], B_den[0]); // find common denominator
-        A_den[0]=mmc;
-        A_den[1]=0; // pois não será raiz quadrada
-        A_den[2]=1; // pois não será raiz quadrada
+        C_den[0]=mmc;
+        C_den[1]=0; // pois não será raiz quadrada
+        C_den[2]=1; // pois não será raiz quadrada
             
         // Numerator SUM //
         C_num[1]=0; // pois não será raiz quadrada
@@ -269,6 +275,28 @@ int* calcAmpModSquared(int **amp){
     return result;
 }
 
+/** */
+int* calcNormFactor(SimpleQubitState *state){
+    int* alphaSquared = calcAmpModSquared(state->getAlphaCopy()); // obtém (x²+y²) de alpha
+    int* betaSquared = calcAmpModSquared(state->getBetaCopy()); // obtém (x²+y²) de beta
+    int* sumResult = sum(alphaSquared,betaSquared); // obtém (x²+y²)+(x²+y²)
+    sumResult[1]=2; sumResult[4]=2; // obtém √((x²+y²)+(x²+y²))
+    // TODO checar se a raiz quadrada é reduzível
+    return sumResult;
+}
+
+/** */
+int* normalize(SimpleQubitState *state){
+    int *factor = calcNormFactor(state); // obtém √((x²+y²)+(x²+y²))
+    
+    int **alpha = state->getAlphaCopy();
+    int value = factor[0];
+    value *= state->data[0][3];
+    value /= 
+
+    return 0;
+}
+
 // ****************************************************************************************
 // END FUNCTIONS
 // ****************************************************************************************
@@ -277,14 +305,24 @@ int main(){
     
     vector<SimpleQubitState> *states = loadQuantumStates("data_matriz.txt");
     for(int i=0;i<states->size();i++){
+        cout << "---------------------------------------" << endl;
         SimpleQubitState *state = &(*states)[i];
         cout << state->getStateAsString() << endl;
-        int *alphaResult = calcAmpModSquared(state->getAlphaCopy());
-        int *betaResult = calcAmpModSquared(state->getBetaCopy());
-        cout << "O módulo da amplitude "<<state->getAlphaAsString()<<" ao quadrado = ("<<alphaResult[0]<<"/"<<alphaResult[3]<<")"<<endl;
-        cout << "O módulo da amplitude "<<state->getBetaAsString()<<" ao quadrado = ("<<betaResult[0]<<"/"<<betaResult[3]<<")"<<endl;
+        int *alphaSquared = calcAmpModSquared(state->getAlphaCopy());
+        int *betaSquared = calcAmpModSquared(state->getBetaCopy());
+        cout << "O módulo da amplitude "<<state->getAlphaAsString()<<" ao quadrado = ("<<alphaSquared[0]<<"/"<<alphaSquared[3]<<")"<<endl;
+        cout << "O módulo da amplitude "<<state->getBetaAsString()<<" ao quadrado = ("<<betaSquared[0]<<"/"<<betaSquared[3]<<")"<<endl;
+        // verifica a normalização
+        int *sumResult = sum(alphaSquared,betaSquared);
+        cout <<"("<<alphaSquared[0]<<"/"<<alphaSquared[3]<<")"<<"+"<<"("<<betaSquared[0]<<"/"<<betaSquared[3]<<")"<<"="<<"("<<sumResult[0]<<"/"<<sumResult[3]<<") - ";
+        if(sumResult[0]==1&&sumResult[3]==1) cout << "Estado normalizado!" << endl;
+        // TODO calcular as probabilidades
+        else{
+            cout << "Estado não normalizado!" << endl;
+            normalize(state);
+            // TODO calcular as probabilidades
+        }
     }
     
-
     return 0;
 }
