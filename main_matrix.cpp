@@ -3,27 +3,10 @@
 #include <math.h>
 #include <string>
 #include <iostream>
+#include <fstream>
+#include <vector>
 
 using namespace std;
-
-// ****************************************************************************************
-// UTILS FUNCTIONS
-// ****************************************************************************************
-
-// Função para calcular o MDC usando o Algoritmo de Euclides
-int MDC(int a, int b) {
-    while (b != 0) {
-        int temp = b;
-        b = a % b;
-        a = temp;
-    }
-    return a;
-}
-/** Função para calcular o MMC usando a relação MMC(a, b) = (a * b) / MDC(a, b) */
-int MMC(int a, int b) {
-    return (a / MDC(a, b)) * b; // Evita overflow ao dividir antes de multiplicar
-}
-// ****************************************************************************************
 
 /** Tipo Abstrato de Dados que representa a matriz simples de qutib único */
 class SimpleQubitState{
@@ -79,17 +62,11 @@ public:
         return data;
     }
     
-    /** Obtem 1 das 4 frações existentes
-     * @param 0 alpha real
-     * @param 1 alpha imaginary
-     * @param 2 beta real
-     * @param 3 beta imaginary
-    */
     string getFractionAsString(int line){
         if(line<0||line>3) return "(invalid line)";
         string num = to_string(data[line][0]); if(data[line][1]==2) num="√"+num;
         string den = to_string(data[line][3]); if(data[line][4]==2) den="√"+den;
-        return "("+num+"/"+den+")";
+        return (num=="0"||den=="0")?"":"("+num+"/"+den+")";
     }
 
     string getAlphaRealAsString(){return getFractionAsString(0);}
@@ -98,15 +75,81 @@ public:
     string getBetaImagAsString(){return getFractionAsString(3);}
     
     string getAlphaAsString(){
-        return "("+getAlphaRealAsString()+"+"+getAlphaImagAsString()+"i)";
+        string alphaReal = getAlphaRealAsString();
+        string alphaImag = getAlphaImagAsString();
+        if(alphaReal.compare("")==0) return "("+alphaImag+"i)";
+        else if(alphaImag.compare("")==0) return "("+alphaReal+")";
+        else return "("+alphaReal+"+"+alphaImag+"i)";
     }
     string getBetaAsString(){
-        return "("+getBetaRealAsString()+"+"+getBetaImagAsString()+"i)";
+        string betaReal = getBetaRealAsString();
+        string betaImag = getBetaImagAsString();
+        if(betaReal.compare("")==0) return "("+betaImag+"i)";
+        else if(betaImag.compare("")==0) return "("+betaReal+")";
+        else return "("+betaReal+"+"+betaImag+"i)";
     }
     string getStateAsString(){
         return "|ψ⟩ = "+getAlphaAsString()+"|0⟩ + "+getBetaAsString()+"|1⟩";
     }
 };
+
+// ****************************************************************************************
+// UTILS FUNCTIONS
+// ****************************************************************************************
+
+// função para ler arquivo de texto
+vector<string> readTextFile(const string& fileName) {
+    vector<string> lines;
+    ifstream fileStream(fileName);  // Abre o arquivo para leitura
+    if (!fileStream) {  // Verifica se o arquivo foi aberto corretamente
+        cerr << "Erro in open file: " << fileName << std::endl;
+    }else{
+        string line;
+        while (getline(fileStream, line)) {  // Lê cada linha do arquivo
+            lines.push_back(line);
+        }
+        fileStream.close();  // Fecha o arquivo
+    }
+    return lines;
+}
+
+// função para carregar um array de estados quânticos
+vector<SimpleQubitState>* loadQuantumStates(const string& fileName){
+    vector<string> textStates = readTextFile(fileName);
+    vector<SimpleQubitState> *states = new vector<SimpleQubitState>();
+    for(int i=0;i<textStates.size();i++){ // percorre cada uma dos estados quânticos retornados
+        string textState = textStates[i]; // estado quantico em forma textual
+        int data[4][6]; // matriz para cada um dos estados
+        for(int j=0;j<textState.size();j++){// percorre cada valor da representação matricial do estado
+            data[j/6][j%6]=textState[j]-'0'; // transfere os dados da a matriz
+        }
+        states->push_back(SimpleQubitState(data)); // inicializa cada um dos estados quânticos
+    }
+    return states; // retorna o array de estados quâticos
+}
+
+
+// Função para calcular o MDC usando o Algoritmo de Euclides
+int MDC(int a, int b) {
+    while (b != 0) {
+        int temp = b;
+        b = a % b;
+        a = temp;
+    }
+    return a;
+}
+/** Função para calcular o MMC usando a relação MMC(a, b) = (a * b) / MDC(a, b) */
+int MMC(int a, int b) {
+    return (a / MDC(a, b)) * b; // Evita overflow ao dividir antes de multiplicar
+}
+
+// ****************************************************************************************
+// END UTILS FUNCTIONS
+// ****************************************************************************************
+
+// ****************************************************************************************
+// FUNCTIONS
+// ****************************************************************************************
 
 /** verifica se dois valores são iguais */
 bool equals(int *A, int *B){
@@ -173,6 +216,10 @@ int* calcAmpModSquared(int **amp){
     for(int i=0;i<6;i++){real[i]=amp[0][i];}// obtém a parte real da amplitude
     for(int i=0;i<6;i++){imag[i]=amp[1][i];}// obtém a parte imaginária da amplitude
 
+    // verifica se x(parte real) ou y(parte imaginária) são iguais a zero
+    bool realZero = (real[0]==0||real[3]==0)?true:false;
+    bool imagZero = (imag[0]==0||imag[3]==0)?true:false;
+
     // processamento da parte real
     int realSquared[6]; // array para armazenar a parte real da amplitude ao quadrado (já processada)
     if(real[1]==0){ // o num da parte real não possui raiz
@@ -215,23 +262,29 @@ int* calcAmpModSquared(int **amp){
         imagSquared[5]=1;
     }
 
-    // TODO só precisa somar se ambas as partes forem diferentes de zero
-    return sum(realSquared,imagSquared); // soma as frações e retorna o resultado
+    int *result = new int[6]; // fração a ser retornada
+    if(imagZero) std::copy(realSquared, realSquared + 6, result); // parte imaginária é zero, somente a parte real²(x²) será retornada
+    else if(realZero) std::copy(imagSquared, imagSquared + 6, result); // parte real é zero, somente a parte imaginaria²(y²) será retornada
+    else result = sum(realSquared,imagSquared); // o retorno será x²+y² 
+    return result;
 }
+
+// ****************************************************************************************
+// END FUNCTIONS
+// ****************************************************************************************
 
 int main(){
     
-    int data[4][6] = {{1,0,1,6,2,1},
-                          {1,0,1,6,2,1},
-                          {2,2,1,3,2,1},
-                          {0,0,0,0,0,0}};
-
-    SimpleQubitState *state = new SimpleQubitState(data);
-    cout << state->getStateAsString() << endl;
-    int *alphaResult = calcAmpModSquared(state->getAlphaCopy());
-    int *betaResult = calcAmpModSquared(state->getBetaCopy());
-    cout << "O módulo da amplitude "<<state->getAlphaAsString()<<" ao quadrado = ("<<alphaResult[0]<<"/"<<alphaResult[3]<<")"<<endl;
-    cout << "O módulo da amplitude "<<state->getBetaAsString()<<" ao quadrado = ("<<betaResult[0]<<"/"<<betaResult[3]<<")"<<endl;
+    vector<SimpleQubitState> *states = loadQuantumStates("data_matriz.txt");
+    for(int i=0;i<states->size();i++){
+        SimpleQubitState *state = &(*states)[i];
+        cout << state->getStateAsString() << endl;
+        int *alphaResult = calcAmpModSquared(state->getAlphaCopy());
+        int *betaResult = calcAmpModSquared(state->getBetaCopy());
+        cout << "O módulo da amplitude "<<state->getAlphaAsString()<<" ao quadrado = ("<<alphaResult[0]<<"/"<<alphaResult[3]<<")"<<endl;
+        cout << "O módulo da amplitude "<<state->getBetaAsString()<<" ao quadrado = ("<<betaResult[0]<<"/"<<betaResult[3]<<")"<<endl;
+    }
+    
 
     return 0;
 }
