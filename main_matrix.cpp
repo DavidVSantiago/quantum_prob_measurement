@@ -36,32 +36,9 @@ public:
         }
     }
     
-    // member functions
-    int** getMatrix(){return this->data;} // get raw matrix data
-    // int* getAlphaReal(){return this->alphaReal;} // gets real part of |0⟩ amplitude
-    // int* getAlphaImag(){return this->alphaImag;} // gets imaginary part of |0⟩ amplitude
-    // int* getBetaReal(){return this->betaReal;} // gets real part of |1⟩ amplitude
-    // int* getBetaImag(){return this->betaImag;} // gets imaginary part of |1⟩ amplitude
-    int** getAlphaCopy(){
-        int **data = new int*[2]; // alpha data, 2 lines
-        for(int i=0;i<2;i++){ // percorre as linhas
-            data[i] = new int[6]; // 6 columns
-            for(int j=0;j<6;j++){ // percorre as colunas
-                data[i][j]=this->data[i][j]; // transfer data
-            }
-        }
-        return data;
-    }
-    int** getBetaCopy(){
-        int **data = new int*[2]; // alpha data, 2 lines
-        for(int i=0;i<2;i++){ // percorre as linhas
-            data[i] = new int[6]; // 6 columns
-            for(int j=0;j<6;j++){ // percorre as colunas
-                data[i][j]=this->data[i+2][j]; // transfer data
-            }
-        }
-        return data;
-    }
+    // member functions *********************************
+    int* getAlpha(){ return data[0];}
+    int* getBeta(){ return data[1];}
     
     string getFractionAsString(int line){
         if(line<0||line>3) return "(invalid line)";
@@ -142,7 +119,6 @@ bool checkDataError(vector<int> s){
     return error;
 }
 
-
 // função para carregar um array de estados quânticos
 vector<SimpleQubitState>* loadQuantumStates(const string& fileName){
     vector<string> textStates = readTextFile(fileName); // obtem um array das linhas do arquivo
@@ -203,110 +179,67 @@ bool equals(int *A, int *B){
     return A[0]==B[0]&&A[1]==B[1]&&A[2]==B[2];
 }
 
-/** Realiza a soma das frações. Pelo fato de que (|α|^2) = (x^2+y^2) a soma de frações nunca terão radicais! */
-int* sum(int *A,int *B){
-    // arrays para armazenar os valores de num e den das frações
-    int *A_num = new int[3];
-    int *A_den = new int[3]; 
-    int *B_num = new int[3];
-    int *B_den = new int[3];
-    int *C_num = new int[3];
-    int *C_den = new int[3];
-    
-    for(int i=0;i<3;i++){A_num[i]=A[i];B_num[i]=B[i];}// extrai o num das frações
-    for(int i=3;i<6;i++){A_den[i-3]=A[i];B_den[i-3]=B[i];}// extrai o den das frações
-
-    if(equals(A_den,B_den)){ // denominadores iguais (não precisa fazer MDC)
-        // C_den = A_den; // mantém o denominador
-        for(int i=0;i<3;i++){C_den[i]=A_den[i];}
-
-        // Numerator SUM (they will never have radical)
-        C_num[1]=0; // pois não será raiz quadrada
-        C_num[2]=1; // pois não será raiz quadrada
-        C_num[0]=A_num[0]+B_num[0]; // soma os valores dos numeradores
-
-    }else{ // denominadores diferentes (precisa fazer MDC)
-        int mmc = MMC(A_den[0], B_den[0]); // find common denominator
-        A_den[0]=mmc;
-        A_den[1]=0; // pois não será raiz quadrada
-        A_den[2]=1; // pois não será raiz quadrada
-            
-        // Numerator SUM //
-        C_num[1]=0; // pois não será raiz quadrada
-        C_num[2]=1; // pois não será raiz quadrada
-        C_num[0]=((mmc/A_den[0])*A_num[0])+((mmc/B_den[0])*B_num[0]); // soma os valores dos numeradores (considerando o MMC)
-    }
-
-    // junta o numerador e denominador em uma única fração resultado
-    int *C = new int[6]; // fração resultado
-    for(int i=0;i<3;i++){C[i]=C_num[i];}
-    for(int i=3;i<6;i++){C[i]=C_den[i-3];}
-
-    simplifyFraction(C);
-    return C;
-}
-
 /** Calcula |α|^2 da amplitude*/
-int* calcAmpModSquared(int **amp){
+int* calcAmpModSquared(int *amp){
     
-    int real[6]; // array para armazenar a parte real da amplitude
-    int imag[6]; // array para armazenar a parte imaginária da amplitude
-    for(int i=0;i<6;i++){real[i]=amp[0][i];}// obtém a parte real da amplitude
-    for(int i=0;i<6;i++){imag[i]=amp[1][i];}// obtém a parte imaginária da amplitude
+    bool realZero = (amp[0]==0)?true:false; // verifica se x(parte real) é igual a zero
+    bool imagZero = (amp[3]==0)?true:false; // verifica se y(parte imaginária) é igual a zero
+    bool denZero = (amp[6]==0)?true:false; // verifica se d(denominador) é igual a zero
 
-    // verifica se x(parte real) ou y(parte imaginária) são iguais a zero
-    bool realZero = (real[0]==0||real[3]==0)?true:false;
-    bool imagZero = (imag[0]==0||imag[3]==0)?true:false;
+    int *ampSqrd = new int[6]; // aloca o array para armazenar a fração (x²+y²)/d² = z/w
+    int xSqrd,ySqrd,dSqrd;
 
-    // processamento da parte real
-    int realSquared[6]; // array para armazenar a parte real da amplitude ao quadrado (já processada)
-    if(real[1]==0){ // o num da parte real não possui raiz
-        realSquared[0] = real[0]*real[0];
-        realSquared[1]=0;
-        realSquared[2]=1;
-    }else if(real[1]==2){ // o num da parte real possui raiz
-        realSquared[0] = real[0];
-        realSquared[1]=0;
-        realSquared[2]=1;
+    /** eleva x ao quadrado */
+    if(amp[1]==0){ // se x não for raiz
+        xSqrd = amp[0]*amp[0]; // calcula x², de (x²+y²)/d²
+    }else{ // se x for raiz
+        xSqrd = (amp[2]*amp[2]*amp[0]); // calcula x², de (x²+y²)/d²
     }
-    if(real[4]==0){ // o den da parte real não possui raiz
-        realSquared[3] = real[3]*real[3];
-        realSquared[4]=0;
-        realSquared[5]=1;
-    }else if(real[4]==2){ // o den da parte real possui raiz
-        realSquared[3] = real[3];
-        realSquared[4]=0;
-        realSquared[5]=1;
+    /** eleva y ao quadrado */
+    if(amp[4]==0){ // se y não for raiz
+        ySqrd = amp[3]*amp[3]; // calcula y², de (x²+y²)/d²
+    }else{ // se y for raiz
+        ySqrd = (amp[5]*amp[5]*amp[3]); // calcula y², de (x²+y²)/d²
+    }
+    /** eleva d ao quadrado */
+    if(amp[7]==0){ // se d não for raiz
+        dSqrd = amp[6]*amp[6]; // calcula d², de (x²+y²)/d²
+    }else{ // se d for raiz
+        dSqrd = (amp[8]*amp[8]*amp[6]); // calcula d², de (x²+y²)/d²
     }
 
-    // processamento da parte imaginaria
-    int imagSquared[6]; // array para armazenar a parte real da amplitude ao quadrado (já processada)
-    if(imag[1]==0){ // o num da parte real não possui raiz
-        imagSquared[0] = imag[0]*imag[0];
-        imagSquared[1]=0;
-        imagSquared[2]=1;
-    }else if(imag[1]==2){ // o num da parte real possui raiz
-        imagSquared[0] = imag[0];
-        imagSquared[1]=0;
-        imagSquared[2]=1;
-    }
-    if(imag[4]==0){ // o den da parte real não possui raiz
-        imagSquared[3] = imag[3]*imag[3];
-        imagSquared[4]=0;
-        imagSquared[5]=1;
-    }else if(imag[4]==2){ // o den da parte real possui raiz
-        imagSquared[3] = imag[3];
-        imagSquared[4]=0;
-        imagSquared[5]=1;
-    }
+    ampSqrd[0]= xSqrd + ySqrd; // define x²+y² (x²+y²)/d² (z de z/w)
+    ampSqrd[1] = 0; // o resultado sempre perde a raiz
+    ampSqrd[2] = 1; // como não possui raiz, o fator é sempre 1
+    ampSqrd[3]= dSqrd; // define d² (x²+y²)/d² (w de z/w)
+    ampSqrd[4] = 0; // o resultado sempre perde a raiz
+    ampSqrd[5] = 1; // como não possui raiz, o fator é sempre 1
 
-    int *result = new int[6]; // fração a ser retornada
-    if(imagZero) std::copy(realSquared, realSquared + 6, result); // parte imaginária é zero, somente a parte real²(x²) será retornada
-    else if(realZero) std::copy(imagSquared, imagSquared + 6, result); // parte real é zero, somente a parte imaginaria²(y²) será retornada
-    else result = sum(realSquared,imagSquared); // o retorno será x²+y² 
-    return result;
+    simplifyFraction(ampSqrd); // simplifica (se possível) a fração z/w
+
+    return ampSqrd; // retorna z/w
 }
 
+void calcProbStateExtend(SimpleQubitState* state){
+    cout << "--------------------------------------------" << endl;
+    cout << state->getStateAsString() << endl;
+    int *alphaSqrd = calcAmpModSquared(state->getAlpha());
+    int *betaSqrd = calcAmpModSquared(state->getBeta());
+    cout << "O módulo da amplitude "<<state->getAlphaAsString()<<" ao quadrado = ("<<alphaSqrd[0]<<"/"<<alphaSqrd[3]<<")"<<endl;
+    cout << "O módulo da amplitude "<<state->getBetaAsString()<<" ao quadrado = ("<<betaSqrd[0]<<"/"<<betaSqrd[3]<<")"<<endl;
+    cout << "Probabilidade de medir |0⟩ = " << ((float)alphaSqrd[0]/alphaSqrd[3])*100 << "%" << endl;
+    cout << "Probabilidade de medir |1⟩ = " << ((float)betaSqrd[0]/betaSqrd[3])*100 << "%" << endl;
+    cout << "--------------------------------------------" << endl;
+}
+void calcProbStateSimple(SimpleQubitState* state){
+    cout << "--------------------------------------------" << endl;
+    cout << state->getStateAsString() << endl;
+    int *alphaSqrd = calcAmpModSquared(state->getAlpha());
+    int *betaSqrd = calcAmpModSquared(state->getBeta());
+    cout << "Probabilidade de medir |0⟩ = " << ((float)alphaSqrd[0]/alphaSqrd[3])*100 << "%" << endl;
+    cout << "Probabilidade de medir |1⟩ = " << ((float)betaSqrd[0]/betaSqrd[3])*100 << "%" << endl;
+    cout << "--------------------------------------------" << endl;
+}
 // ****************************************************************************************
 // END FUNCTIONS
 // ****************************************************************************************
@@ -316,12 +249,7 @@ int main() {
     if(states==nullptr) {cout<<"dados corrompidos!"<<endl; return 1;}
     for(int i=0;i<states->size();i++){
         SimpleQubitState *state = &(*states)[i];
-        cout << state->getStateAsString() << endl;
-        int *alphaResult = calcAmpModSquared(state->data[0]); // TODO
-        int *betaResult = calcAmpModSquared(state->getBetaCopy());
-        cout << "O módulo da amplitude "<<state->getAlphaAsString()<<" ao quadrado = ("<<alphaResult[0]<<"/"<<alphaResult[3]<<")"<<endl;
-        cout << "O módulo da amplitude "<<state->getBetaAsString()<<" ao quadrado = ("<<betaResult[0]<<"/"<<betaResult[3]<<")"<<endl;
+        calcProbStateSimple(state);
     }
-    
     return 0;
 }
