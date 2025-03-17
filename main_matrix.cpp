@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <vector>
 
 using namespace std;
@@ -11,25 +12,25 @@ using namespace std;
 /** Tipo Abstrato de Dados que representa a matriz simples de qutib único */
 class SimpleQubitState{
 public:
-    int **data = new int*[4]; // data matrix, 4 lines
-    int *alphaReal = data[0]; // points to real part of |0⟩ amplitude
-    int *alphaImag = data[1]; // points to imaginary part of |0⟩ amplitude
-    int *betaReal = data[2]; // points to real part of |1⟩ amplitude
-    int *betaImag = data[3]; // points to imaginary part of |1⟩ amplitude
+    int **data = new int*[2]; // data matrix, 2 lines
+    // int *alphaReal = data[0]; // points to real part of |0⟩ amplitude
+    // int *alphaImag = data[1]; // points to imaginary part of |0⟩ amplitude
+    // int *betaReal = data[2]; // points to real part of |1⟩ amplitude
+    // int *betaImag = data[3]; // points to imaginary part of |1⟩ amplitude
 
     SimpleQubitState(){
-        for(int i=0;i<4;i++){ // percorre as linhas
-            data[i] = new int[6]; // 6 columns
-            for(int j=0;j<6;j++){ // percorre as colunas
+        for(int i=0;i<2;i++){ // percorre as linhas
+            data[i] = new int[9]; // 9 columns
+            for(int j=0;j<9;j++){ // percorre as colunas
                 data[i][j]=0; // fill zeros
             }
         }
     }
-    SimpleQubitState(int data[4][6]){
+    SimpleQubitState(int data[2][9]){
         // transfer received data
-        for(int i=0;i<4;i++){ // percorre as linhas
-            this->data[i] = new int[6]; // 6 columns
-            for(int j=0;j<6;j++){ // percorre as colunas
+        for(int i=0;i<2;i++){ // percorre as linhas
+            this->data[i] = new int[9]; // 9 columns
+            for(int j=0;j<9;j++){ // percorre as colunas
                 this->data[i][j]=data[i][j]; // transfer data
             }
         }
@@ -37,10 +38,10 @@ public:
     
     // member functions
     int** getMatrix(){return this->data;} // get raw matrix data
-    int* getAlphaReal(){return this->alphaReal;} // gets real part of |0⟩ amplitude
-    int* getAlphaImag(){return this->alphaImag;} // gets imaginary part of |0⟩ amplitude
-    int* getBetaReal(){return this->betaReal;} // gets real part of |1⟩ amplitude
-    int* getBetaImag(){return this->betaImag;} // gets imaginary part of |1⟩ amplitude
+    // int* getAlphaReal(){return this->alphaReal;} // gets real part of |0⟩ amplitude
+    // int* getAlphaImag(){return this->alphaImag;} // gets imaginary part of |0⟩ amplitude
+    // int* getBetaReal(){return this->betaReal;} // gets real part of |1⟩ amplitude
+    // int* getBetaImag(){return this->betaImag;} // gets imaginary part of |1⟩ amplitude
     int** getAlphaCopy(){
         int **data = new int*[2]; // alpha data, 2 lines
         for(int i=0;i<2;i++){ // percorre as linhas
@@ -69,23 +70,29 @@ public:
         return (num=="0"||den=="0")?"":"("+num+"/"+den+")";
     }
 
-    string getAlphaRealAsString(){return getFractionAsString(0);}
-    string getAlphaImagAsString(){return getFractionAsString(1);}
-    string getBetaRealAsString(){return getFractionAsString(2);}
-    string getBetaImagAsString(){return getFractionAsString(3);}
+    string getValAsString(int l, int c){ string val = to_string(data[l][c]); if(data[l][c+1]==2) val="√"+val; return val; }
+    
+    string getRealAsString(int l){ return getValAsString(l,0); }
+    string getImagAsString(int l){ return getValAsString(l,3); }
+    string getDenAsString(int l){ return getValAsString(l,6); }
+
+    string getAlphaRealAsString(){ return "("+getRealAsString(0)+"/"+getDenAsString(0)+")"; }
+    string getAlphaImagAsString(){ return "("+getImagAsString(0)+"/"+getDenAsString(0)+")"; }
+    string getBetaRealAsString(){ return "("+getRealAsString(1)+"/"+getDenAsString(1)+")"; }
+    string getBetaImagAsString(){ return "("+getImagAsString(1)+"/"+getDenAsString(1)+")"; }
     
     string getAlphaAsString(){
         string alphaReal = getAlphaRealAsString();
         string alphaImag = getAlphaImagAsString();
-        if(alphaReal.compare("")==0) return "("+alphaImag+"i)";
-        else if(alphaImag.compare("")==0) return "("+alphaReal+")";
+        if(alphaReal.substr(0, 3) == "(0/") return "("+alphaImag+"i)";
+        else if(alphaImag.substr(0, 3) == "(0/") return "("+alphaReal+")";
         else return "("+alphaReal+"+"+alphaImag+"i)";
     }
     string getBetaAsString(){
         string betaReal = getBetaRealAsString();
         string betaImag = getBetaImagAsString();
-        if(betaReal.compare("")==0) return "("+betaImag+"i)";
-        else if(betaImag.compare("")==0) return "("+betaReal+")";
+        if(betaReal.substr(0, 3) == "(0/") return "("+betaImag+"i)";
+        else if(betaImag.substr(0, 3) == "(0/") return "("+betaReal+")";
         else return "("+betaReal+"+"+betaImag+"i)";
     }
     string getStateAsString(){
@@ -113,21 +120,51 @@ vector<string> readTextFile(const string& fileName) {
     return lines;
 }
 
+// verifica a integridade dos dados de cada estado carregado do arquivo
+bool checkDataError(vector<int> s){
+    bool error = false;
+    if(s.size()!=18) error=true; // um estado quântico deve conter exatamente 18 valores
+    
+    // ou não é raiz (valor 0) ou é raiz (valor 2)
+    if((s[1]!=0&&s[1]!=2)||(s[4]!=0&&s[4]!=2)||(s[7]!=0&&s[7]!=2)||
+       (s[10]!=0&&s[10]!=2)||(s[13]!=0&&s[13]!=2)||(s[16]!=0&&s[16]!=2)) error=true;
+
+    // o fator multiplicativo não pode ser negativo
+    if(s[2]<0||s[5]<0||s[8]<0||s[11]<0||s[14]<0||s[17]<0) error=true;
+
+    // o fator multiplicativo não pode ser ≠ 1 se o valor não for uma raiz
+    if((s[2]!=1&&s[1]==0&&s[0]!=0)||(s[5]!=1&&s[4]==0&&s[3]!=0)||(s[8]!=1&&s[7]==0&&s[6]!=0)||
+       (s[11]!=1&&s[10]==0&&s[9]!=0)||(s[14]!=1&&s[13]==0&&s[12]!=0)||(s[17]!=1&&s[16]==0&&s[15]!=0)) error=true;
+
+    // o valor do denominador não pode ser negativo
+    if(s[6]<0||s[15]<0) error=true; // o valor do denominador não pode ser negativo
+    
+    return error;
+}
+
+
 // função para carregar um array de estados quânticos
 vector<SimpleQubitState>* loadQuantumStates(const string& fileName){
-    vector<string> textStates = readTextFile(fileName);
-    vector<SimpleQubitState> *states = new vector<SimpleQubitState>();
+    vector<string> textStates = readTextFile(fileName); // obtem um array das linhas do arquivo
+    vector<SimpleQubitState> *states = new vector<SimpleQubitState>(); // cada linha será convertida em um estado quântico
+    if (!textStates.empty() && textStates.back().empty()) textStates.pop_back(); // Remove a última linha se estiver vazia
     for(int i=0;i<textStates.size();i++){ // percorre cada uma dos estados quânticos retornados
-        string textState = textStates[i]; // estado quantico em forma textual
-        int data[4][6]; // matriz para cada um dos estados
-        for(int j=0;j<textState.size();j++){// percorre cada valor da representação matricial do estado
-            data[j/6][j%6]=textState[j]-'0'; // transfere os dados da a matriz
+        string textState = textStates[i]; // obtém cada estado quântico em forma textual
+        vector<int> tempData; // vetor temporário para armazenar os valores convertidos do estado
+        stringstream ss(textState); // stream para ler os valores e separar as vírgulas
+        string number; // armazena cada numero separado por vírgula
+        while (getline(ss, number, ',')) { // Lê cada número separado por vírgula
+            tempData.push_back(stoi(number)); // Converte para inteiro e adiciona ao vetor temporário
         }
-        states->push_back(SimpleQubitState(data)); // inicializa cada um dos estados quânticos
+        if(checkDataError(tempData)) return nullptr; // dados corrompidos! retorna null
+        int data[2][9]; // matriz para inicializar cada um dos estados
+        for(int j=0;j<tempData.size();j++){ // percorre cada valor do vetor temporário
+            data[j/9][j%9]=tempData[j]; // transfere os dados para a matriz de inicialização
+        }
+        states->push_back(SimpleQubitState(data)); // inicializa cada um dos estados quânticos com os dados da matriz
     }
     return states; // retorna o array de estados quâticos
 }
-
 
 // Função para calcular o MDC usando o Algoritmo de Euclides
 int MDC(int a, int b) {
@@ -151,18 +188,19 @@ int MMC(int a, int b) {
 // FUNCTIONS
 // ****************************************************************************************
 
-/** verifica se dois valores são iguais */
-bool equals(int *A, int *B){
-    return A[0]==B[0]&&A[1]==B[1]&&A[2]==B[2];
-}
-
-void simplifyFraction(int *frac){
+/** Simplifica, se possível, uma fração */
+void simplifyFraction(int *frac) {
     int mdc = MDC(frac[0],frac[3]);
     // simplifica a fração, caso precise
     if(mdc!=1){
         frac[0] /= mdc;
         frac[3] /= mdc;
     }
+}
+
+/** verifica se dois valores são iguais */
+bool equals(int *A, int *B){
+    return A[0]==B[0]&&A[1]==B[1]&&A[2]==B[2];
 }
 
 /** Realiza a soma das frações. Pelo fato de que (|α|^2) = (x^2+y^2) a soma de frações nunca terão radicais! */
@@ -273,18 +311,17 @@ int* calcAmpModSquared(int **amp){
 // END FUNCTIONS
 // ****************************************************************************************
 
-int main(){
-    
+int main() {
     vector<SimpleQubitState> *states = loadQuantumStates("data_matriz.txt");
+    if(states==nullptr) {cout<<"dados corrompidos!"<<endl; return 1;}
     for(int i=0;i<states->size();i++){
         SimpleQubitState *state = &(*states)[i];
         cout << state->getStateAsString() << endl;
-        int *alphaResult = calcAmpModSquared(state->getAlphaCopy());
+        int *alphaResult = calcAmpModSquared(state->data[0]); // TODO
         int *betaResult = calcAmpModSquared(state->getBetaCopy());
         cout << "O módulo da amplitude "<<state->getAlphaAsString()<<" ao quadrado = ("<<alphaResult[0]<<"/"<<alphaResult[3]<<")"<<endl;
         cout << "O módulo da amplitude "<<state->getBetaAsString()<<" ao quadrado = ("<<betaResult[0]<<"/"<<betaResult[3]<<")"<<endl;
     }
     
-
     return 0;
 }
