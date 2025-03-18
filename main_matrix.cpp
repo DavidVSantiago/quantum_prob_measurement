@@ -181,27 +181,27 @@ bool equals(int *A, int *B){
 
 /** Calcula da |amplitude|²*/
 int* calcAmpModSquared(int *amp){
-
-    int *ampSqrd = new int[2]; // aloca o array para armazenar a fração (x²+y²)/d² = z/w
+    // aloca o array para armazenar a fração resultante de (x²+y²)/d² = z/w
+    int *ampSqrd = new int[2]; // tamanho 2, pois a representação simbólica da fração resultante não armazena raizes!
     int xSqrd,ySqrd,dSqrd;
 
-    /** eleva x ao quadrado */
+    /** calcula x² */
     if(amp[1]==0){ // se x não for raiz
-        xSqrd = amp[0]*amp[0]; // calcula x², de (x²+y²)/d²
+        xSqrd = amp[0]*amp[0]; // apenas eleva o valor ao quadrado
     }else{ // se x for raiz
-        xSqrd = (amp[2]*amp[2]*amp[0]); // calcula x², de (x²+y²)/d²
+        xSqrd = (amp[2]*amp[2]*amp[0]); // eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√x)² = a².x
     }
-    /** eleva y ao quadrado */
+    /** calcula y² */
     if(amp[4]==0){ // se y não for raiz
-        ySqrd = amp[3]*amp[3]; // calcula y², de (x²+y²)/d²
+        ySqrd = amp[3]*amp[3]; // apenas eleva o valor ao quadrado
     }else{ // se y for raiz
-        ySqrd = (amp[5]*amp[5]*amp[3]); // calcula y², de (x²+y²)/d²
+        ySqrd = (amp[5]*amp[5]*amp[3]); // eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√y)² = a².y
     }
-    /** eleva d ao quadrado */
+    /** calcula d² */
     if(amp[7]==0){ // se d não for raiz
-        dSqrd = amp[6]*amp[6]; // calcula d², de (x²+y²)/d²
+        dSqrd = amp[6]*amp[6]; // apenas eleva o valor ao quadrado
     }else{ // se d for raiz
-        dSqrd = (amp[8]*amp[8]*amp[6]); // calcula d², de (x²+y²)/d²
+        dSqrd = (amp[8]*amp[8]*amp[6]); // eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√d)² = a².d
     }
 
     ampSqrd[0]= xSqrd + ySqrd; // define x²+y², de (x²+y²)/d² (z de z/w)
@@ -210,6 +210,39 @@ int* calcAmpModSquared(int *amp){
     simplifyFraction(ampSqrd); // simplifica (se possível) a fração z/w
 
     return ampSqrd; // retorna z/w
+}
+
+/** Calcula da |amplitude'|² Normalizada*/
+int* calcAmpModSquaredNorm(int *amp, int zf, int wf){
+    // aloca o array para armazenar a fração resultante de (wf.x²+wf.y²)/zf.d²
+    int *ampSqrd = new int[2]; // tamanho 2, pois a representação simbólica da fração resultante não armazena raizes!
+    int xSqrd,ySqrd,dSqrd;
+
+    /** calcula wf.x² */
+    if(amp[1]==0){ // se x não for raiz
+        xSqrd = wf*(amp[0]*amp[0]); // calcula wf.x²
+    }else{ // se x for raiz
+        xSqrd = wf*(amp[2]*amp[2]*amp[0]); // eleva o fator ao quadrado e multiplica pelo valor. Ex.: wf(a√x)² = wf.a².x
+    }
+    /** calcula wf.y² */
+    if(amp[4]==0){ // se y não for raiz
+        ySqrd = wf*(amp[3]*amp[3]); // apenas eleva o valor ao quadrado
+    }else{ // se y for raiz
+        ySqrd = wf*(amp[5]*amp[5]*amp[3]); // eleva o fator ao quadrado e multiplica pelo valor. Ex.: wf(a√y)² = wf.a².y
+    }
+    /** calcula zf.d² */
+    if(amp[7]==0){ // se d não for raiz
+        dSqrd = zf*(amp[6]*amp[6]); // apenas eleva o valor ao quadrado
+    }else{ // se d for raiz
+        dSqrd = zf*(amp[8]*amp[8]*amp[6]); // eleva o fator ao quadrado e multiplica pelo valor. Ex.: zf(a√d)² = zf.a².d
+    }
+
+    ampSqrd[0]= xSqrd + ySqrd; // define wf.x²+wf.y², de (wf.x²+wf.y²)/zf.d²
+    ampSqrd[1]= dSqrd; // define zf.d², de (wf.x²+wf.y²)/zf.d²
+
+    simplifyFraction(ampSqrd); // simplifica (se possível) a fração final
+
+    return ampSqrd; // retorna a fração
 }
 
 /** Calcula a soma de duas fracoes passadas como parâmetro */
@@ -222,36 +255,45 @@ int *sumFractions(int *f1, int* f2){
     return result;
 }
 
-void calcProbStateExtend(SimpleQubitState* state){
+void calcProbState(SimpleQubitState* state){
     cout << "--------------------------------------------" << endl;
-    cout << state->getStateAsString() << endl;
-    int *alphaSqrd = calcAmpModSquared(state->getAlpha()); // calcula z/w (alpha)
-    int *betaSqrd = calcAmpModSquared(state->getBeta()); // calcula z/w (beta)
-    cout << "O módulo da amplitude "<<state->getAlphaAsString()<<" ao quadrado = ("<<alphaSqrd[0]<<"/"<<alphaSqrd[3]<<")"<<endl;
-    cout << "O módulo da amplitude "<<state->getBetaAsString()<<" ao quadrado = ("<<betaSqrd[0]<<"/"<<betaSqrd[3]<<")"<<endl;
+    cout << state->getStateAsString()<<endl;
+    int *alphaSqrd = calcAmpModSquared(state->getAlpha()); // calcula |α|², z/w (alpha)
+    int *betaSqrd = calcAmpModSquared(state->getBeta()); // calcula |β|², z/w (beta)
     // teste de normalização
     int *sumSqrd = sumFractions(alphaSqrd, betaSqrd); // calcula zf/wf
-    if(sumSqrd[0]!=1||sumSqrd[1]!=1){ // se zf/wf for diferente de 1 (condição de normalização)
-        // calcula |α'|
-        int *aplha = state->getAlpha(); 
-        alpha[]
-        // calcula |β'|
-        int *beta = state->getBeta();
-
-
-    }
-    cout << "Probabilidade de medir |0⟩ = " << ((float)alphaSqrd[0]/alphaSqrd[3])*100 << "%" << endl;
-    cout << "Probabilidade de medir |1⟩ = " << ((float)betaSqrd[0]/betaSqrd[3])*100 << "%" << endl;
+    cout << "|α|² = ("<<alphaSqrd[0]<<"/"<<alphaSqrd[1]<<")"<<endl;
+    cout << "|β|² = ("<<betaSqrd[0]<<"/"<<betaSqrd[1]<<")"<<endl;
+    if(sumSqrd[0]!=1||sumSqrd[1]!=1){ // se zf/wf for diferente de 1 (verifica normalização)
+        cout << "Não nomalizado!" << endl;
+        int zf = sumSqrd[0];
+        int wf = sumSqrd[1];
+        alphaSqrd = calcAmpModSquaredNorm(state->getAlpha(),zf,wf); // calcula |α'|²
+        betaSqrd = calcAmpModSquaredNorm(state->getBeta(),zf,wf); // calcula |β'|²
+        cout << "|α'|² = ("<<alphaSqrd[0]<<"/"<<alphaSqrd[1]<<")"<<endl;
+        cout << "|β'|² = ("<<betaSqrd[0]<<"/"<<betaSqrd[1]<<")"<<endl;
+    }else cout << "Nomalizado!" << endl;
+    cout << "Probabilidade de medir |0⟩ = " << ((float)alphaSqrd[0]/alphaSqrd[1])*100 << "%" << endl;
+    cout << "Probabilidade de medir |1⟩ = " << ((float)betaSqrd[0]/betaSqrd[1])*100 << "%" << endl;
     cout << "--------------------------------------------" << endl;
 }
 
 void calcProbStateSimple(SimpleQubitState* state){
     cout << "--------------------------------------------" << endl;
-    cout << state->getStateAsString() << endl;
-    int *alphaSqrd = calcAmpModSquared(state->getAlpha());
-    int *betaSqrd = calcAmpModSquared(state->getBeta());
-    cout << "Probabilidade de medir |0⟩ = " << ((float)alphaSqrd[0]/alphaSqrd[3])*100 << "%" << endl;
-    cout << "Probabilidade de medir |1⟩ = " << ((float)betaSqrd[0]/betaSqrd[3])*100 << "%" << endl;
+    cout << state->getStateAsString();
+    int *alphaSqrd = calcAmpModSquared(state->getAlpha()); // calcula |α|², z/w (alpha)
+    int *betaSqrd = calcAmpModSquared(state->getBeta()); // calcula |β|², z/w (beta)
+    // teste de normalização
+    int *sumSqrd = sumFractions(alphaSqrd, betaSqrd); // calcula zf/wf
+    if(sumSqrd[0]!=1||sumSqrd[1]!=1){ // se zf/wf for diferente de 1 (verifica normalização)
+        cout << " - Não nomalizado! " << endl;
+        int zf = sumSqrd[0];
+        int wf = sumSqrd[1];
+        alphaSqrd = calcAmpModSquaredNorm(state->getAlpha(),zf,wf); // calcula |α'|²
+        betaSqrd = calcAmpModSquaredNorm(state->getBeta(),zf,wf); // calcula |β'|²
+    }else cout << " - Nomalizado! " << endl;
+    cout << "prob.|0⟩ = " << ((float)alphaSqrd[0]/alphaSqrd[1])*100 << "%";
+    cout << " - prob.|1⟩ = " << ((float)betaSqrd[0]/betaSqrd[1])*100 << "%" << endl;
     cout << "--------------------------------------------" << endl;
 }
 
@@ -264,7 +306,7 @@ int main() {
     if(states==nullptr) {cout<<"dados corrompidos!"<<endl; return 1;}
     for(int i=0;i<states->size();i++){
         SimpleQubitState *state = &(*states)[i];
-        calcProbStateExtend(state);
+        calcProbState(state);
     }
     return 0;
 }
