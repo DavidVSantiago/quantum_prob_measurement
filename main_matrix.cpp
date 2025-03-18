@@ -166,11 +166,11 @@ int MMC(int a, int b) {
 
 /** Simplifica, se possível, uma fração */
 void simplifyFraction(int *frac) {
-    int mdc = MDC(frac[0],frac[3]);
+    int mdc = MDC(frac[0],frac[1]);
     // simplifica a fração, caso precise
     if(mdc!=1){
-        frac[0] /= mdc;
-        frac[3] /= mdc;
+        frac[0] /= mdc; // simplify numerator
+        frac[1] /= mdc; // simplify denominator
     }
 }
 
@@ -179,14 +179,10 @@ bool equals(int *A, int *B){
     return A[0]==B[0]&&A[1]==B[1]&&A[2]==B[2];
 }
 
-/** Calcula |α|^2 da amplitude*/
+/** Calcula da |amplitude|²*/
 int* calcAmpModSquared(int *amp){
-    
-    bool realZero = (amp[0]==0)?true:false; // verifica se x(parte real) é igual a zero
-    bool imagZero = (amp[3]==0)?true:false; // verifica se y(parte imaginária) é igual a zero
-    bool denZero = (amp[6]==0)?true:false; // verifica se d(denominador) é igual a zero
 
-    int *ampSqrd = new int[6]; // aloca o array para armazenar a fração (x²+y²)/d² = z/w
+    int *ampSqrd = new int[2]; // aloca o array para armazenar a fração (x²+y²)/d² = z/w
     int xSqrd,ySqrd,dSqrd;
 
     /** eleva x ao quadrado */
@@ -208,29 +204,47 @@ int* calcAmpModSquared(int *amp){
         dSqrd = (amp[8]*amp[8]*amp[6]); // calcula d², de (x²+y²)/d²
     }
 
-    ampSqrd[0]= xSqrd + ySqrd; // define x²+y² (x²+y²)/d² (z de z/w)
-    ampSqrd[1] = 0; // o resultado sempre perde a raiz
-    ampSqrd[2] = 1; // como não possui raiz, o fator é sempre 1
-    ampSqrd[3]= dSqrd; // define d² (x²+y²)/d² (w de z/w)
-    ampSqrd[4] = 0; // o resultado sempre perde a raiz
-    ampSqrd[5] = 1; // como não possui raiz, o fator é sempre 1
+    ampSqrd[0]= xSqrd + ySqrd; // define x²+y², de (x²+y²)/d² (z de z/w)
+    ampSqrd[1]= dSqrd; // define d², de (x²+y²)/d² (w de z/w)
 
     simplifyFraction(ampSqrd); // simplifica (se possível) a fração z/w
 
     return ampSqrd; // retorna z/w
 }
 
+/** Calcula a soma de duas fracoes passadas como parâmetro */
+int *sumFractions(int *f1, int* f2){ 
+    int *result = new int[2]; // será que é realmente necessário alocar um array com 2 posições, uma vez que zf/wf nunca vai possuir raiz?
+    int mmc = MMC(f1[1],f2[1]); // mmc dos denominadores
+    result[1] = mmc; // atribui o denominador final
+    result[0] = ((mmc/f1[1])*f1[0])+((mmc/f2[1])*f2[0]); // atribui o numerador final
+    simplifyFraction(result);
+    return result;
+}
+
 void calcProbStateExtend(SimpleQubitState* state){
     cout << "--------------------------------------------" << endl;
     cout << state->getStateAsString() << endl;
-    int *alphaSqrd = calcAmpModSquared(state->getAlpha());
-    int *betaSqrd = calcAmpModSquared(state->getBeta());
+    int *alphaSqrd = calcAmpModSquared(state->getAlpha()); // calcula z/w (alpha)
+    int *betaSqrd = calcAmpModSquared(state->getBeta()); // calcula z/w (beta)
     cout << "O módulo da amplitude "<<state->getAlphaAsString()<<" ao quadrado = ("<<alphaSqrd[0]<<"/"<<alphaSqrd[3]<<")"<<endl;
     cout << "O módulo da amplitude "<<state->getBetaAsString()<<" ao quadrado = ("<<betaSqrd[0]<<"/"<<betaSqrd[3]<<")"<<endl;
+    // teste de normalização
+    int *sumSqrd = sumFractions(alphaSqrd, betaSqrd); // calcula zf/wf
+    if(sumSqrd[0]!=1||sumSqrd[1]!=1){ // se zf/wf for diferente de 1 (condição de normalização)
+        // calcula |α'|
+        int *aplha = state->getAlpha(); 
+        alpha[]
+        // calcula |β'|
+        int *beta = state->getBeta();
+
+
+    }
     cout << "Probabilidade de medir |0⟩ = " << ((float)alphaSqrd[0]/alphaSqrd[3])*100 << "%" << endl;
     cout << "Probabilidade de medir |1⟩ = " << ((float)betaSqrd[0]/betaSqrd[3])*100 << "%" << endl;
     cout << "--------------------------------------------" << endl;
 }
+
 void calcProbStateSimple(SimpleQubitState* state){
     cout << "--------------------------------------------" << endl;
     cout << state->getStateAsString() << endl;
@@ -240,6 +254,7 @@ void calcProbStateSimple(SimpleQubitState* state){
     cout << "Probabilidade de medir |1⟩ = " << ((float)betaSqrd[0]/betaSqrd[3])*100 << "%" << endl;
     cout << "--------------------------------------------" << endl;
 }
+
 // ****************************************************************************************
 // END FUNCTIONS
 // ****************************************************************************************
@@ -249,7 +264,7 @@ int main() {
     if(states==nullptr) {cout<<"dados corrompidos!"<<endl; return 1;}
     for(int i=0;i<states->size();i++){
         SimpleQubitState *state = &(*states)[i];
-        calcProbStateSimple(state);
+        calcProbStateExtend(state);
     }
     return 0;
 }
