@@ -1,18 +1,12 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string>
 #include <iostream>
-#include <fstream>
-#include <sstream>
-#include <vector>
+#include <string>
 
 using namespace std;
 
 /** Tipo Abstrato de Dados que representa a matriz simples de qutib único */
 class SimpleQubitState{
 private:
-    // ATRIBUTES ------------------------------------------------------
+    // ATRIBUTES ---------------------------------------------------------
     int alphaData[9]; // symbolic alpha data state
     int betaData[9]; // symbolic beta data state
     int alphaSqrd[2]; // temporary stores |α|^2
@@ -54,7 +48,7 @@ private:
         zf_wf[0] = ((mmc/alphaSqrd[1])*alphaSqrd[0])+((mmc/betaSqrd[1])*betaSqrd[0]); // atribui o numerador final
         simplifyFraction(zf_wf);
     }
-    // CALC FUNCTIONS ---------------------------------------------------
+    // CALC FUNCTIONS ----------------------------------------------------
     /** Calculate |α|^2 and |β|^2 */
     void calcAmpModSquared(){
         /** calcula x² (alpha) */
@@ -132,7 +126,7 @@ private:
     }
     
 public:
-    // CONSTRUCTORS ---------------------------------------------------
+    // CONSTRUCTORS ------------------------------------------------------
     SimpleQubitState(){
         for(int i=0;i<18;i++){ // preenche os valores com zero
             alphaData[i]=0;
@@ -147,7 +141,7 @@ public:
         
     }
     
-    // FUNCTIONS ------------------------------------------------------
+    // FUNCTIONS ---------------------------------------------------------
     /** Função principal para o calculo das probabilidades */
     void calcProbState(){
         calcAmpModSquared(); // calcula |α|^2 e |β|^2
