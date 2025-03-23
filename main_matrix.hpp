@@ -13,7 +13,8 @@ using namespace std;
 class SimpleQubitState{
 private:
     // ATRIBUTES ------------------------------------------------------
-    int data[18]; // symbolic data state
+    int alphaData[9]; // symbolic alpha data state
+    int betaData[9]; // symbolic beta data state
     int alphaSqrd[2]; // temporary stores |α|^2 and |α'|^2
     int betaSqrd[2]; // temporary stores |β|^2 and |β'|^2
     int zf_wf[2]; // temporary stores "alphaSqrd" + "betaSqrd"
@@ -22,7 +23,7 @@ private:
     
     // UTILS FUNCTIONS ---------------------------------------------------
     // Função para calcular o MDC usando o Algoritmo de Euclides
-    int MDC(int a, int b) {
+    int MDC(int &a, int &b) {
         while (b != 0) {
             int temp = b;
             b = a % b;
@@ -31,7 +32,7 @@ private:
         return a;
     }
     /** Função para calcular o MMC usando a relação MMC(a, b) = (a * b) / MDC(a, b) */
-    int MMC(int a, int b) {
+    int MMC(int &a, int &b) {
         return (a / MDC(a, b)) * b; // Evita overflow ao dividir antes de multiplicar
     }
     /** Simplifica, se possível, uma fração */
@@ -55,24 +56,24 @@ private:
     /** Calculate |α|^2 and |β|^2 */
     void calcAmpModSquared(){
         /** calcula x² (alpha) */
-        if(data[1]==0) alphaSqrd[0] = data[0]*data[0]; // x is not root, apenas calcula x² e o atribui a z de z/w
-        else alphaSqrd[0] = (data[2]*data[2]*data[0]); // se x for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso, atribui a z de z/w
+        if(alphaData[1]==0) alphaSqrd[0] = alphaData[0]*alphaData[0]; // x is not root, apenas calcula x² e o atribui a z de z/w
+        else alphaSqrd[0] = (alphaData[2]*alphaData[2]*alphaData[0]); // se x for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso, atribui a z de z/w
         /** calcula y² (alpha) */
-        if(data[4]==0) alphaSqrd[0] += data[3]*data[3]; // y is not root, apenas calcula y² e o adiciona a z de z/w (lembrar que z=x²+y²)
-        else alphaSqrd[0] += (data[5]*data[5]*data[3]); // se y for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso, adiciona a z de z/w (lembrar que z=x²+y²)
+        if(alphaData[4]==0) alphaSqrd[0] += alphaData[3]*alphaData[3]; // y is not root, apenas calcula y² e o adiciona a z de z/w (lembrar que z=x²+y²)
+        else alphaSqrd[0] += (alphaData[5]*alphaData[5]*alphaData[3]); // se y for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso, adiciona a z de z/w (lembrar que z=x²+y²)
         /** calcula d² (alpha) */
-        if(data[7]==0) alphaSqrd[1] = data[6]*data[6]; // d is not root, apenas calcula d² e o atribui a w de z/w (lembrar que w=d²)
-        else alphaSqrd[1] = (data[8]*data[8]*data[6]); // se d for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso, atribui a w de z/w (lembrar que w=d²)
+        if(alphaData[7]==0) alphaSqrd[1] = alphaData[6]*alphaData[6]; // d is not root, apenas calcula d² e o atribui a w de z/w (lembrar que w=d²)
+        else alphaSqrd[1] = (alphaData[8]*alphaData[8]*alphaData[6]); // se d for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso, atribui a w de z/w (lembrar que w=d²)
 
         /** calcula x² (beta) */
-        if(data[10]==0) betaSqrd[0] = data[9]*data[9]; // x is not root, apenas calcula x² e o atribui a z de z/w
-        else betaSqrd[0] = (data[11]*data[11]*data[9]); // se x for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso, atribui a z de z/w  
+        if(betaData[1]==0) betaSqrd[0] = betaData[0]*betaData[0]; // x is not root, apenas calcula x² e o atribui a z de z/w
+        else betaSqrd[0] = (betaData[2]*betaData[2]*betaData[0]); // se x for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso, atribui a z de z/w  
         /** calcula y² (beta) */
-        if(data[13]==0) betaSqrd[0] += data[12]*data[12]; // y is not root, apenas calcula y² e o adiciona a z de z/w (lembrar que z=x²+y²)
-        else betaSqrd[0] += (data[14]*data[14]*data[12]); // se y for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso, adiciona a z de z/w (lembrar que z=x²+y²)
+        if(betaData[4]==0) betaSqrd[0] += betaData[3]*betaData[3]; // y is not root, apenas calcula y² e o adiciona a z de z/w (lembrar que z=x²+y²)
+        else betaSqrd[0] += (betaData[5]*betaData[5]*betaData[3]); // se y for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso, adiciona a z de z/w (lembrar que z=x²+y²)
         /** calcula d² (beta) */
-        if(data[16]==0) betaSqrd[1] = data[15]*data[15]; // d is not root, apenas calcula d² e o atribui a w de z/w (lembrar que w=d²)
-        else betaSqrd[1] = (data[17]*data[17]*data[15]); // se d for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso, atribui a w de z/w (lembrar que w=d²)
+        if(betaData[7]==0) betaSqrd[1] = betaData[6]*betaData[6]; // d is not root, apenas calcula d² e o atribui a w de z/w (lembrar que w=d²)
+        else betaSqrd[1] = (betaData[8]*betaData[8]*betaData[6]); // se d for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso, atribui a w de z/w (lembrar que w=d²)
 
         simplifyFraction(alphaSqrd); // simplifica (se possível) a fração z/w (alpha)
         simplifyFraction(betaSqrd); // simplifica (se possível) a fração z/w (beta)
@@ -80,35 +81,49 @@ private:
     /** Calculate |α'|^2 and |β'|^2 */
     void calcAmpModSquaredNormalized(int *zf_wf){
         /** calcula x² (alpha) */
-        if(data[1]==0) alphaSqrd[0] = zf_wf[1]*(data[0]*data[0]); // x is not root, apenas calcula wf*x² e o atribui a z' de z'/w'
-        else alphaSqrd[0] = zf_wf[1]*(data[2]*data[2]*data[0]); // se x for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso, multiplica por wf e atribui a z' de z'/w'
+        if(alphaData[1]==0) alphaSqrd[0] = zf_wf[1]*(alphaData[0]*alphaData[0]); // x is not root, apenas calcula wf*x² e o atribui a z' de z'/w'
+        else alphaSqrd[0] = zf_wf[1]*(alphaData[2]*alphaData[2]*alphaData[0]); // se x for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso, multiplica por wf e atribui a z' de z'/w'
         /** calcula y² (alpha) */
-        if(data[4]==0) alphaSqrd[0] += zf_wf[1]*(data[3]*data[3]); // y is not root, apenas calcula wf*y² e o adiciona a z' de z'/w'
-        else alphaSqrd[0] += zf_wf[1]*(data[5]*data[5]*data[3]); // se y for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso,  multiplica por wf e adiciona a z' de '/w'
+        if(alphaData[4]==0) alphaSqrd[0] += zf_wf[1]*(alphaData[3]*alphaData[3]); // y is not root, apenas calcula wf*y² e o adiciona a z' de z'/w'
+        else alphaSqrd[0] += zf_wf[1]*(alphaData[5]*alphaData[5]*alphaData[3]); // se y for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso,  multiplica por wf e adiciona a z' de '/w'
         /** calcula d² (alpha) */
-        if(data[7]==0) alphaSqrd[1] = zf_wf[0]*(data[6]*data[6]); // d is not root, apenas calcula zf*d² e o atribui a w' de z'/w'
-        else alphaSqrd[1] = zf_wf[0]*(data[8]*data[8]*data[6]); // se d for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso,  multiplica por zf e atribui a w' de z'/w'
+        if(alphaData[7]==0) alphaSqrd[1] = zf_wf[0]*(alphaData[6]*alphaData[6]); // d is not root, apenas calcula zf*d² e o atribui a w' de z'/w'
+        else alphaSqrd[1] = zf_wf[0]*(alphaData[8]*alphaData[8]*alphaData[6]); // se d for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso,  multiplica por zf e atribui a w' de z'/w'
 
         /** calcula x² (beta) */
-        if(data[10]==0) betaSqrd[0] = zf_wf[1]*(data[9]*data[9]); // x is not root, apenas calcula wf*x² e o atribui a z' de z'/w'
-        else betaSqrd[0] = zf_wf[1]*(data[11]*data[11]*data[9]); // se x for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso, multiplica por wf e atribui a z' de z'/w'  
+        if(betaData[1]==0) betaSqrd[0] = zf_wf[1]*(betaData[0]*betaData[0]); // x is not root, apenas calcula wf*x² e o atribui a z' de z'/w'
+        else betaSqrd[0] = zf_wf[1]*(betaData[2]*betaData[2]*betaData[0]); // se x for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso, multiplica por wf e atribui a z' de z'/w'  
         /** calcula y² (beta) */
-        if(data[13]==0) betaSqrd[0] += zf_wf[1]*(data[12]*data[12]); // y is not root, apenas calcula wf*y² e o adiciona a z' de z'/w'
-        else betaSqrd[0] += zf_wf[1]*(data[14]*data[14]*data[12]); // se y for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso,  multiplica por wf e adiciona a z' de z'/w'
+        if(betaData[4]==0) betaSqrd[0] += zf_wf[1]*(betaData[3]*betaData[3]); // y is not root, apenas calcula wf*y² e o adiciona a z' de z'/w'
+        else betaSqrd[0] += zf_wf[1]*(betaData[5]*betaData[5]*betaData[3]); // se y for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso,  multiplica por wf e adiciona a z' de z'/w'
         /** calcula d² (beta) */
-        if(data[16]==0) betaSqrd[1] = zf_wf[0]*(data[15]*data[15]); // d is not root, apenas calcula zf*d² e o atribui a w' de z'/w'
-        else betaSqrd[1] = zf_wf[0]*(data[17]*data[17]*data[15]); // se d for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso,  multiplica por zf e atribui a w' de z'/w'
+        if(betaData[7]==0) betaSqrd[1] = zf_wf[0]*(betaData[6]*betaData[6]); // d is not root, apenas calcula zf*d² e o atribui a w' de z'/w'
+        else betaSqrd[1] = zf_wf[0]*(betaData[8]*betaData[8]*betaData[6]); // se d for raiz, eleva o fator ao quadrado e multiplica pelo valor. Ex.: (a√b)² = a².b - Após isso,  multiplica por zf e atribui a w' de z'/w'
 
         simplifyFraction(alphaSqrd); // simplifica (se possível) a fração z/w (alpha)
         simplifyFraction(betaSqrd); // simplifica (se possível) a fração z/w (beta)
     }
     
     // PRINT FUNCTIONS ---------------------------------------------------
-    string getValue(int v, int r, int f){
-       if(data[r]==2){
-
-       }else return  
+    string getAlphaRealAsString(){
+        string text = to_string(alphaData[0]);
+        if(alphaData[1]==0) text="√"+text;
+        if(alphaData[2]!=1) text=to_string(alphaData[2])+text;
+        return text;
     }
+    string getAlphaImagAsString(){
+        string text = to_string(alphaData[3]);
+        if(alphaData[4]==0) text="√"+text;
+        if(alphaData[5]!=1) text=to_string(alphaData[5])+text;
+        return text;
+    }
+    string getAlphaDenAsString(){
+        string text = to_string(alphaData[3]);
+        if(alphaData[4]==0) text="√"+text;
+        if(alphaData[5]!=1) text=to_string(alphaData[5])+text;
+        return text;
+    }
+
     string getAlphaRealAsString(){ return "("++"/"+getDenAsString(0)+")"; }
     string getAlphaImagAsString(){ return "("+getImagAsString(0)+"/"+getDenAsString(0)+")"; }
     string getBetaRealAsString(){ return "("+getRealAsString(1)+"/"+getDenAsString(1)+")"; }
@@ -135,13 +150,16 @@ public:
     // CONSTRUCTORS ---------------------------------------------------
     SimpleQubitState(){
         for(int i=0;i<18;i++){ // preenche os valores com zero
-            data[i]=0;
+            alphaData[i]=0;
+            betaData[i]=0;
         }
     }
     SimpleQubitState(int data[18]){
         for(int i=0;i<18;i++){ // transfer received data
-            this->data[i]=data[i];
+            if(i<9)this->alphaData[i]=data[i];
+            else this->betaData[i-9]=data[i];
         }
+        
     }
     
     // FUNCTIONS ------------------------------------------------------
