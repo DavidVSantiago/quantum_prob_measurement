@@ -1,0 +1,62 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[brazil]{babel} % Opcional: para texto em português
+\usepackage{amsmath} % Para equações matemáticas
+\usepackage{braket} % Para notação de Dirac (|ψ⟩)
+\usepackage{hyperref} % Para links clicáveis (opcional)
+
+\title{Medição de Probabilidade de Estados Quânticos em Qubits Únicos}
+\author{Seu Nome}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Representação do Estado Quântico de Bit Único}
+\label{sec:representacao}
+
+Um estado quântico de um qubit único é representado pela notação de Dirac \(\ket{\psi}\) \cite{referencia1}, conforme ilustrado na Equação \eqref{eq:estado_qubit}:
+
+\begin{equation}
+\ket{\psi} = \alpha\ket{0} + \beta\ket{1},
+\label{eq:estado_qubit}
+\end{equation}
+
+onde \(\alpha\) e \(\beta\) são números complexos denominados \textit{amplitudes de probabilidade}. As probabilidades de medir os estados \(\ket{0}\) e \(\ket{1}\) são dadas por \(|\alpha|^2\) e \(|\beta|^2\), respectivamente.
+
+Estados quânticos conhecidos, como os estados de Bell e de Hadamard, são tipicamente representados por frações envolvendo raízes quadradas \cite{nielsen2010, preskill1998}. Por exemplo, o estado de Hadamard é definido como:
+
+\begin{equation}
+\ket{+} = \frac{1}{\sqrt{2}}(\ket{0} + \ket{1}).
+\label{eq:hadamard}
+\end{equation}
+
+Neste trabalho, propomos uma representação alternativa para \(\alpha\) e \(\beta\), expressando-os como frações de números complexos com denominadores reais:
+
+\begin{align}
+\alpha &= \frac{x_1 + \gamma i}{d_1}, \label{eq:alpha} \\
+\beta &= \frac{x_2 + \delta i}{d_2}, \label{eq:beta}
+\end{align}
+
+onde:
+\begin{itemize}
+\item \(x_1, \gamma, x_2, \delta \in \mathbb{R}\) são as partes real e imaginária dos numeradores,
+\item \(d_1, d_2 \in \mathbb{R}\) são denominadores que garantem a normalização do estado (\(|\alpha|^2 + |\beta|^2 = 1\)).
+\end{itemize}
+
+Essa representação elimina a manipulação direta de raízes quadradas durante o cálculo de probabilidades. Por exemplo, o estado \(\ket{+}\) pode ser reescrito como:
+
+\begin{equation}
+\alpha = \frac{1}{d}, \quad \beta = \frac{1}{d}, \quad \text{com } d = \sqrt{2}.
+\label{eq:exemplo}
+\end{equation}
+
+\section*{Referências}
+\begin{thebibliography}{9}
+\bibitem{referencia1} Autor. \textit{Título do Artigo}. Revista, Ano.
+\bibitem{nielsen2010} Nielsen, M. A., \& Chuang, I. L. (2010). \textit{Quantum Computation and Quantum Information}. Cambridge University Press.
+\bibitem{preskill1998} Preskill, J. (1998). \textit{Lecture Notes on Quantum Computation}. Caltech.
+\end{thebibliography}
+
+\end{document}
