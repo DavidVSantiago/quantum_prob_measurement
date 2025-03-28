@@ -4,57 +4,303 @@
 \usepackage{amsmath} % Para equações matemáticas
 \usepackage{braket} % Para notação de Dirac (|ψ⟩)
 \usepackage{hyperref} % Para links clicáveis (opcional)
+\usepackage{graphicx} % Para inserir quadros e diagramas
+\usepackage{booktabs} % Para tabelas profissionais
+\usepackage{lipsum}
 
 \title{Medição de Probabilidade de Estados Quânticos em Qubits Únicos}
-\author{Seu Nome}
+\author{David Santiago}
 \date{\today}
 
 \begin{document}
 
 \maketitle
 
-\section{Representação do Estado Quântico de Bit Único}
-\label{sec:representacao}
+\begin{abstract}
+Texto a ser colocado posteriormente
+\end{abstract}
 
-Um estado quântico de um qubit único é representado pela notação de Dirac \(\ket{\psi}\) \cite{referencia1}, conforme ilustrado na Equação \eqref{eq:estado_qubit}:
+\keywords{computação quântica, estados quânticos, qubits. algoritmos}
+
+\section{Introdução}
+\label{sec:intro}
+Texto a ser colocado posteriormente
+
+\section{Definição matemática}
+\label{sec:definicao_mate}
+
+Nesta seção serão apresentados os modelos matemáticos utilizados para a implementação do algoritmo da medição de probabilidade dos estados quânticos. É importante salientar que esses modelos já estão bem estabelecidos pela literatura da computação quântica, com destaque para Nielsen e Chuang\cite{nielsen2010}.
+
+O objetivo desta seção é detalhar o processo de transformações algébricas aplicadas aos modelos, no âmbito da obtenção de um modelo de menor complexidade numérica, que elimina a necessidade de operações com raízes e permite a implementação de um algoritmo clássico computacionalmente mais eficiente, conforme demonstrado nos resultados dos experimentos (seção \ref{sec:resultados}).
+
+\subsection{Representação do estado quântico de bit único \label{sec:rep_estados_quanticos}}
+
+Um estado quântico de um qubit único é representado pela notação de Dirac \(\ket{\psi}\), conforme é ilustrado na equação \eqref{eq:estado_qubit}:
 
 \begin{equation}
-\ket{\psi} = \alpha\ket{0} + \beta\ket{1},
+\ket{\psi} = \alpha\ket{0} + \beta\ket{1}
 \label{eq:estado_qubit}
 \end{equation}
 
-onde \(\alpha\) e \(\beta\) são números complexos denominados \textit{amplitudes de probabilidade}. As probabilidades de medir os estados \(\ket{0}\) e \(\ket{1}\) são dadas por \(|\alpha|^2\) e \(|\beta|^2\), respectivamente.
+onde as simbologias \(\alpha\) e \(\beta\) são números complexos que definem as amplitudes de probabilidades, de tal forma que \(|\alpha|^2\) determina a probabilidade de obtenção do qubit \(\ket{0}\) e \(|\beta|^2\) determina a probabilidade de obtenção do qubit \(\ket{1}\).
 
-Estados quânticos conhecidos, como os estados de Bell e de Hadamard, são tipicamente representados por frações envolvendo raízes quadradas \cite{nielsen2010, preskill1998}. Por exemplo, o estado de Hadamard é definido como:
+Estados quânticos conhecidos, tais como os de Bell e de Hadamard, são tipicamente representados por frações envolvendo raízes quadradas \cite{nielsen2010, preskill1998}. Por exemplo, o estado de Hadamard é definido como:
 
 \begin{equation}
-\ket{+} = \frac{1}{\sqrt{2}}(\ket{0} + \ket{1}).
+\ket{+} = \frac{1}{\sqrt{2}}(\ket{0} + \ket{1})
 \label{eq:hadamard}
 \end{equation}
 
 Neste trabalho, propomos uma representação alternativa para \(\alpha\) e \(\beta\), expressando-os como frações de números complexos com denominadores reais:
 
-\begin{align}
-\alpha &= \frac{x_1 + \gamma i}{d_1}, \label{eq:alpha} \\
-\beta &= \frac{x_2 + \delta i}{d_2}, \label{eq:beta}
-\end{align}
+\begin{equation}
+\alpha = \frac{x_1 + y_1 i}{d_1},
+\label{eq:alpha}
+\end{equation}
+
+\begin{equation}
+\beta = \frac{x_2 + y_2 i}{d_2}
+\label{eq:beta}
+\end{equation}
 
 onde:
+
 \begin{itemize}
-\item \(x_1, \gamma, x_2, \delta \in \mathbb{R}\) são as partes real e imaginária dos numeradores,
+\item \(x_1, y_1, x_2, y_2 \in \mathbb{R}\) são as partes real e imaginária dos numeradores,
 \item \(d_1, d_2 \in \mathbb{R}\) são denominadores que garantem a normalização do estado (\(|\alpha|^2 + |\beta|^2 = 1\)).
 \end{itemize}
 
-Essa representação elimina a manipulação direta de raízes quadradas durante o cálculo de probabilidades. Por exemplo, o estado \(\ket{+}\) pode ser reescrito como:
+Essa representação elimina a manipulação direta de raízes quadradas durante o cálculo de probabilidades.
+
+\subsection*{Exemplo prático}
+
+No estado \(\ket{+}\), \(\sqrt{2}\) é tratado como símbolo, evitando cálculos explícitos de raízes:
+
+\begin{align*}
+\alpha = \frac{1}{d}, \quad \beta = \frac{1}{d}, \quad \text{com } d = \sqrt{2}
+\end{align*}
+
+Isso permite que operações como \(|\alpha|^2=\frac{1}{d^2}\) sejam realizadas sem calcular \(\sqrt{2}\) explicitamente, simplificando a implementação computacional.
+
+\subsection{Cálculo dos valores de probabilidade}
+
+Um bom ponto de partida para a medição das probabilidades é calcular diretamente os valores de \(|\alpha|^2\) e \(|\beta|^2\). Dado que \(\alpha\) e \(\beta\) são números complexos na forma \(\frac{x+yi}{d}\) e dado que \(|\alpha|\) e \(|\beta|\) são os módulos do fatores de amplitude, tem-se que:
 
 \begin{equation}
-\alpha = \frac{1}{d}, \quad \beta = \frac{1}{d}, \quad \text{com } d = \sqrt{2}.
-\label{eq:exemplo}
+|\alpha| = \sqrt{\left(\frac{x_1}{d_1}\right)^2+\left(\frac{y_1}{d_1}\right)^2} =  \sqrt{\frac{x_1^2+y_1^2}{d_1^2}},
+\label{eq:mod_alpha}
 \end{equation}
 
-\section*{Referências}
+\begin{equation}
+|\beta| = \sqrt{\left(\frac{x_2}{d_2}\right)^2+\left(\frac{y_2}{d_2}\right)^2} =  \sqrt{\frac{x_2^2+y_2^2}{d_2^2}}
+\label{eq:mod_beta}
+\end{equation}
+
+Como os valores de probabilidade de \(\ket{0}\) e \(\ket{1}\) são dados, respectivamente, por \(|\alpha|^2\) e \(|\beta|^2\), tem-se que:
+
+\begin{equation}
+|\alpha|^2 = \left(\sqrt{\frac{x_1^2+y_1^2}{d_1^2}}\right)^2=\frac{x_1^2+y_1^2}{d_1^2},
+\label{eq:mod_alpha_sqr}
+\end{equation}
+
+\begin{equation}
+|\beta|^2 = \left(\sqrt{\frac{x_2^2+y_2^2}{d_2^2}}\right)^2=\frac{x_2^2+y_2^2}{d_2^2}
+\label{eq:mod_beta_sqr}
+\end{equation}
+
+Para simplificar operações, definimos:
+\begin{itemize}
+\item \(z \in \mathbb{Z}\) como uma representação simbólica para \(x^2+y^2\),
+\item \(w \in \mathbb{Z}\) como uma representação simbólica para \(d^2\).
+\end{itemize}
+
+Assim:
+
+\begin{equation}
+|\alpha|^2 = \frac{z_1}{w_1},
+\label{eq:mod_alpha_sq_final}
+\end{equation}
+
+\begin{equation}
+|\beta|^2 = \frac{z_2}{w_2}
+\label{eq:mod_beta_sq_final}
+\end{equation}
+
+Desta forma, tem-se \(\frac{z_1}{w_1}\) como a probabilidade de medir \(\ket{0}\) e \(\frac{z_2}{w_2}\) como a probabilidade de medir \(\ket{1}\).
+
+\subsection*{Exemplo Numérico}
+
+Para \(\alpha = \frac{1 + 3i}{\sqrt{10}}\):
+\begin{table}[h]
+\centering
+\begin{tabular}{lc}
+\toprule
+\textbf{Passo} & \textbf{Cálculo} \\
+\midrule
+Tradicional & \(|\alpha|^2 = \left(\sqrt{\frac{1^2 + 3^2}{\sqrt{10}^2}}\right)^2 = 1\) \\
+Proposto & \(z = 10\), \(w = 10\) \(\Rightarrow \frac{10}{10} = 1\) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\fbox{
+\begin{minipage}{0.8\textwidth}
+\textbf{Fluxo do cálculo do Algoritmo:}
+\begin{enumerate}
+\item Recebe \(\alpha = \frac{x + yi}{d}\)
+\item Calcula \(z = x^2 + y^2\)
+\item Calcula \(w = d^2\)
+\item Retorna probabilidade \(\frac{z}{w}\)
+\end{enumerate}
+\end{minipage}
+}
+\caption{Processamento sem operações com raízes}
+\label{fig:fluxo}
+\end{figure}
+
+\subsection{Cálculo de normalização}
+
+Uma vez calculados os valores de probabilidade, é necessário verificar se estão normalizados antes de tê-los como resultado final da medição. Como citado na seção \ref{sec:rep_estados_quanticos}, o estado quântico está normalizado quando \(|\alpha|^2+|\beta|^2=1\).
+
+A partir das equações (\ref{eq:mod_alpha_sq_final}) e (\ref{eq:mod_beta_sq_final}), definimos:
+
+\begin{equation}
+wf=\text{mmc}(w_1, w_2), \quad  \text{com } wf \in \mathbb{Z},
+\label{eq:wf}
+\end{equation}
+
+\begin{equation}
+zf=wf\left(\frac{z_1}{w_1}+\frac{z_2}{w_2}\right), \quad \text{com } zf \in \mathbb{Z}
+\label{eq:zf}
+\end{equation}
+
+A escolha de \(wf=\text{mmc}(w_1, w_2)\) se deve à necessidade de um denominador comum, pois \(w_1\) e \(w_2\) podem assumir valores distintos.
+
+Assim:
+
+\begin{equation}
+|\alpha|^2 + |\beta|^2 = \frac{z_1}{w_1} + \frac{z_2}{w_2} = \frac{zf}{wf}
+\label{eq:zf_wf}
+\end{equation}
+
+A partir de então, tem-se que o estado está normalizado quando \(\frac{zf}{wf}=1\). Por outro lado, caso \(\frac{zf}{wf}\ne1\), é necessário realizar o processo de normalização, o qual consiste em recalcular novos valores para as amplitudes de probabilidade \(\alpha\) e \(\beta\). Este processo se inicia com a identificação do \textit{fator de normalização}, que é a raiz quadrada da soma dos quadrados dos módulos de \(\alpha\) e \(\beta\), dado pela expressão:
+
+\begin{equation}
+F=\sqrt{|\alpha|^2+|\beta|^2}=\sqrt{\frac{zf}{wf}}=\frac{\sqrt{zf}}{\sqrt{wf}}
+\label{eq:norm_factor}
+\end{equation}
+
+Uma vez em posse desse fator, pode-se calcular os novos valores de amplitudes de probabilidade normalizados. Isso é feito dividindo valores de amplitude \(\alpha\) e \(\beta\) iniciais pelo fator de normalização. Desta forma, definimos:
+
+\begin{equation}
+\alpha'=\frac{\alpha}{F}=\frac{\frac{x_1+y_1i}{d_1}}{\frac{\sqrt{zf}}{\sqrt{wf}}}=\left(\frac{x_1+y_1i}{d_1}\right)\left(\frac{\sqrt{wf}}{\sqrt{zf}}\right)=\frac{\sqrt{wf}\left(x_1+y_1i\right)}{\sqrt{zf}\left(d_1\right)},
+\label{eq:alpha_norm}
+\end{equation}
+
+\begin{equation}
+\beta'=\frac{\beta}{F}=\frac{\frac{x_2+y_2i}{d_2}}{\frac{\sqrt{zf}}{\sqrt{wf}}}=\left(\frac{x_2+y_2i}{d_2}\right)\left(\frac{\sqrt{wf}}{\sqrt{zf}}\right)=\frac{\sqrt{wf}\left(x_2+y_2i\right)}{\sqrt{zf}\left(d_2\right)}
+\label{eq:beta_norm}
+\end{equation}
+
+Uma vez normalizadas as amplitudes, conclui-se que \(|\alpha|^2\) representa a probabilidade de medir \(\ket{0}\) e \(|\beta|^2\) representa a probabilidade de medir \(\ket{1}\). Portanto, a partir das equações (\ref{eq:alpha_norm}) e (\ref{eq:beta_norm}), pode-se definir que:
+
+\begin{equation}
+|\alpha'|^2=\frac{\left(\sqrt{wf}\cdot x_1\right)^2+\left(\sqrt{wf}\cdot y_1\right)^2}{\left(\sqrt{zf}\cdot d_1\right)^2}=\frac{wf\cdot x_1^2+wf\cdot y_1^2}{zf\cdot d_1^2},
+\label{eq:alpha_norm_sqr}
+\end{equation}
+
+\begin{equation}
+|\beta'|^2=\frac{\left(\sqrt{wf}\cdot x_2\right)^2+\left(\sqrt{wf}\cdot y_2\right)^2}{\left(\sqrt{zf}\cdot d_2\right)^2}=\frac{wf\cdot x_2^2+wf\cdot y_2^2}{zf\cdot d_2^2}
+\label{eq:beta_norm_sqr}
+\end{equation}
+
+Para simplificar operações, definimos:
+\begin{itemize}
+\item \(z' \in \mathbb{Z}\) como uma representação simbólica para \(wf\cdot x^2+wf\cdot y^2\),
+\item \(w' \in \mathbb{Z}\) como uma representação simbólica para \(zf\cdot d^2\).
+\end{itemize}
+
+Assim:
+
+\begin{equation}
+|\alpha'|^2=\frac{z'_1}{w'_1},
+\label{eq:alpha_norm_sqr_final}
+\end{equation}
+
+\begin{equation}
+|\beta'|^2=\frac{z'_2}{w'_2}
+\label{eq:beta_norm_sqr_final}
+\end{equation}
+
+Desta forma, tem-se \(\frac{z'_1}{w'_1}\) e \(\frac{z'_2}{w'_2}\) como a probabilidade de medir, respectivamente, \(\ket{0}\) e \(\ket{1}\) após o processo de normalização do estado quântico.
+
+É importante ressaltar que estas transformações algébricas demonstradas diferem das simbologias e demonstrações mais formais encontradas na bibliografia. As transformações algébricas realizadas nas equações \ref{eq:alpha_norm_sqr} e \ref{eq:beta_norm_sqr} tiveram a intenção de resultar em uma expressão especialmente útil no contexto de eficiência computacional.
+Na transformação:
+
+\begin{align*}
+\frac{\left(\sqrt{wf}\cdot x\right)^2+\left(\sqrt{wf}\cdot y\right)^2}{\left(\sqrt{zf}\cdot d\right)^2}=\frac{wf\cdot x^2+wf\cdot y^2}{zf\cdot d^2}
+\end{align*}
+
+observa-se a eliminação da necessidade de operações de extração de raízes (operações computacionalmente custosas).
+
+\subsection*{Exemplo numérico completo}
+Dado um estado quântico:
+
+\begin{align*}
+\ket{\psi}=\left(\frac{1+2i}{\sqrt{10}}\right)\ket{0}+\left(\frac{3-i}{\sqrt{10}}\right)\ket{1}
+\end{align*}
+
+o algoritmo proposto segue os passos da figura \ref{fig:ex_numerico}
+
+\begin{figure}[h]
+\centering
+\fbox{
+\begin{minipage}{0.8\textwidth}
+\textbf{Fluxo do cálculo do Algoritmo:}
+\begin{enumerate}
+\item \(x_1=1,y_1=2,d_1=\sqrt{10},x_2=3,y_2=-1,d_2=\sqrt{10}\)
+\item \(|\alpha|^2=\frac{x_1^2+y_1^2}{d_1^2}=\frac{1^2+2^2}{\sqrt{10}^2}=\frac{5}{10}=\frac{1}{2}\Rightarrow \frac{z_1}{w_1}=\frac{1}{2}\)
+\item \(|\beta|^2=\frac{x_2^2+y_2^2}{d_2^2}=\frac{3^2+(-1)^2}
+{\sqrt{10}^2}=\frac{10}{10}=1\Rightarrow \frac{z_2}{w_2}=\frac{1}{1}\)
+\item \(\frac{zf}{wf}=\frac{z_1}{w_1}+\frac{z_2}{w_2}=\frac{1}{2}+1=\frac{3}{2}\Rightarrow \frac{zf}{wf} \neq1\), não normalizado!
+\item \(F=\frac{\sqrt{zf}}{\sqrt{wf}}=\frac{\sqrt{3}}{\sqrt{2}}\), fator de normalização
+\item \(\frac{z'_1}{w'_1}=\frac{wf\cdot x_1^2+wf\cdot y_1^2}{zf\cdot d_1^2}=\frac{2\cdot1^2+2\cdot2^2}{3\cdot\sqrt{10}^2}=\frac{2+8}{30}=\frac{1}{3}\)
+\item \(\frac{z'_2}{w'_2}=\frac{wf\cdot x_2^2+wf\cdot y_2^2}{zf\cdot d_2^2}=\frac{2\cdot3^2+2\cdot1^2}{3\cdot\sqrt{10}^2}=\frac{18+2}{30}=\frac{2}{3}\)
+\item prob. \(\ket{0}=33.\overline{3}\%\), prob. \(\ket{1}=66.\overline{6}\%\)
+\end{enumerate}
+\end{minipage}
+}
+\caption{Processamento sem operações com raízes}
+\label{fig:ex_numerico}
+\end{figure}
+
+\section{algoritmo proposto}
+\label{sec:algoritmo}
+Texto a ser colocado posteriormente
+
+\subsection{modelagem simbólica}
+\label{sec:modelagem}
+Texto a ser colocado posteriormente
+
+\subsection{Implementação}
+\label{sec:implementacao}
+Texto a ser colocado posteriormente
+
+\section{Testes e validação}
+\label{sec:testes_validacao}
+Texto a ser colocado posteriormente
+
+\section{Resultados}
+\label{sec:resultados}
+Texto a ser colocado posteriormente
+
+\section{Conclusões}
+\label{sec:conclusoes}
+Texto a ser colocado posteriormente
+
 \begin{thebibliography}{9}
-\bibitem{referencia1} Autor. \textit{Título do Artigo}. Revista, Ano.
 \bibitem{nielsen2010} Nielsen, M. A., \& Chuang, I. L. (2010). \textit{Quantum Computation and Quantum Information}. Cambridge University Press.
 \bibitem{preskill1998} Preskill, J. (1998). \textit{Lecture Notes on Quantum Computation}. Caltech.
 \end{thebibliography}
