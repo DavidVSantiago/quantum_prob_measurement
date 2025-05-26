@@ -8,7 +8,8 @@ using namespace std;
 // ****************************************************************************************
 // LOAD DATA FUNCTIONS
 // ****************************************************************************************
-// função para ler arquivo de texto
+
+// função para ler arquivo de texto. retorna um vetor de strings, onde cada string é uma linha do arquivo
 vector<string> readTextFile(const string& fileName) {
     vector<string> lines;
     ifstream fileStream(fileName);  // Abre o arquivo para leitura
@@ -23,24 +24,13 @@ vector<string> readTextFile(const string& fileName) {
     }
     return lines;
 }
-// verifica a integridade dos dados de cada estado carregado do arquivo
+
+// verifica a integridade dos dados de cada estado carregado do arquivo. recebe um vetor de inteiros que representa o estado quântico
 bool checkDataError(vector<int> s){
-    bool error = false;
-    if(s.size()!=18) error=true; // um estado quântico deve conter exatamente 18 valores
+    bool error = false; // variável para indicar se há erro nos dados do estado quântico
+    if(s.size()!=10) error=true; // verifica se o tamanho do vetor é 10, que é o tamanho esperado para um estado quântico
     
-    // ou não é raiz (valor 0) ou é raiz (valor 2)
-    if((s[1]!=0&&s[1]!=2)||(s[4]!=0&&s[4]!=2)||(s[7]!=0&&s[7]!=2)||
-       (s[10]!=0&&s[10]!=2)||(s[13]!=0&&s[13]!=2)||(s[16]!=0&&s[16]!=2)) error=true;
-
-    // o fator multiplicativo não pode ser negativo
-    if(s[2]<0||s[5]<0||s[8]<0||s[11]<0||s[14]<0||s[17]<0) error=true;
-
-    // o fator multiplicativo não pode ser ≠ 1 se o valor não for uma raiz
-    if((s[2]!=1&&s[1]==0&&s[0]!=0)||(s[5]!=1&&s[4]==0&&s[3]!=0)||(s[8]!=1&&s[7]==0&&s[6]!=0)||
-       (s[11]!=1&&s[10]==0&&s[9]!=0)||(s[14]!=1&&s[13]==0&&s[12]!=0)||(s[17]!=1&&s[16]==0&&s[15]!=0)) error=true;
-
-    // o valor do denominador não pode ser negativo
-    if(s[6]<0||s[15]<0) error=true; // o valor do denominador não pode ser negativo
+    // TODO - critérios de validação dos dados do estado quântico
     
     return error;
 }
@@ -57,7 +47,7 @@ vector<SimpleQubitState>* loadQuantumStates(const string& fileName){
         while (getline(ss, number, ',')) { // Lê cada número separado por vírgula
             data.push_back(stoi(number)); // Converte para inteiro e adiciona ao vetor temporário
         }
-        if(checkDataError(data)) return nullptr; // dados corrompidos! retorna null
+        if(checkDataError(data)) return nullptr; // verifica se os dados estão corrompidos
         states->push_back(SimpleQubitState(data.data())); // inicializa cada um dos estados quânticos com os dados da matriz
     }
     return states; // retorna o array de estados quâticos
