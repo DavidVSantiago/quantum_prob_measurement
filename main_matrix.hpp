@@ -10,7 +10,6 @@ private:
     int x1; // parte real da amplitude α, onde x1 ∈ Z
     int y1; // parte imaginária da amplitude α, onde y1 ∈ Z
     int d1[3]; // representação simbólica do denominador da amplitude α (d1[0] = radicando, d1[1] = indice, d1[2] = fator multiplicativo), onde d1 ∈ R
-
     int x2; // parte real da amplitude β, onde x2 ∈ Z
     int y2; // parte imaginária da amplitude β , onde y2 ∈ Z
     int d2[3]; // representação simbólica do denominador da amplitude β (d2[0] = radicando, d2[1] = indice, d2[2] = fator multiplicativo), onde d2 ∈ R
@@ -18,19 +17,14 @@ private:
     // ATRIBUTOS SIMBÓLICOS PARA SIMPLIFICAÇÃO O CÁLCULO ---------------------------------------------------------
     int z1; // representação simbólica do numerador da amplitude α (z1 = x1² + y1²), onde z1 ∈ Z
     int w1; // representação simbólica do denominador da amplitude α (w1 = d1²), onde w1 ∈ Z
-    int alphaSqrd[2]; // representação simbólica para |α|²=z1/w1 (alphaSqrd[0] = z1, alphaSqrd[1] = w1)
-
     int z2; // representação simbólica do numerador da amplitude β (z2 = x2² + y2²), onde z2 ∈ Z
     int w2; // representação simbólica do denominador da amplitude β (w2 = d2²), onde zw ∈ Z
-    int betaSqrd[2]; // representação simbólica para |β|²=z2/w2 (betaSqrd[0] = z2, betaSqrd[1] = w2)
     
     // ATRIBUTOS SIMBÓLICOS PARA SIMPLIFICAÇÃO DA NORMALIZAÇÃO ---------------------------------------------------------
     int wf; // componente denominador do fator de normalização (wf = mmc(w1,w2)), onde wf ∈ Z
     int zf; // componente numerador do fator de normalização (zf = wf*(z1/w1 + z2/w2)), onde zfs ∈ Z
-
     int zl1; // representação simbólica para wf*(x1² + y1²), onde zl1 ∈ Z
     int wl1; // representação simbólica para zf*d1², onde wl1 ∈ Z
-
     int zl2; // representação simbólica para wf*(x2² + y2²), onde wl2 ∈ Z
     int wl2; // representação simbólica para zf*d2², onde wl2 ∈ Z
 
@@ -94,7 +88,7 @@ private:
     
 public:
     // CONSTRUCTORS ------------------------------------------------------
-    SimpleQubitState(){}
+    //SimpleQubitState(){}
     SimpleQubitState(int data[10]){
         // transfere os dados do array para os atributos
         // equivalente à etapa 1 da figura 1 do artigo
@@ -183,5 +177,4 @@ public:
         cout << "Probabilidade de medir |1⟩ = " << ((float)(probBeta[0])/(probBeta[1]))*100 << "%" << endl;
         cout << "--------------------------------------------" << endl;
     }
-
 };
